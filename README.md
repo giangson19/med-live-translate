@@ -77,8 +77,12 @@
 
 - Real-time speech capture using **PyAudio**
 - Voice Activity Detection (VAD) using **Silero** for more efficient processing
-- Speech-to-text transcription using OpenAI's **Whisper**
-- Translation of transcriptions using Helsinki-NLP's **OpusMT**
+- Speech-to-text transcription using:
+  - OpenAI's **Whisper** (99 languages supported)
+  - **PhoWhisper** for Vietnamese-optimized ASR
+- Translation of transcriptions using:
+  - Helsinki-NLP's **OpusMT** (many language pairs)
+  - **VinAI Translate** for high-quality Vietnamese⇄English translation
 - **Full-duplex WebSocket streaming** between client and server
 - Audio compression via **Opus** codec support for lower bandwidth usage
 - Multithreaded design for parallelized processing
@@ -96,13 +100,24 @@
 Before running the project, you need to install the following system dependencies:
 ### **Debian**
 - [**PortAudio**](https://www.portaudio.com/) (for audio input handling)
+- [**Opus**](https://opus-codec.org/) (for audio codec)
   ```bash
-  sudo apt-get install portaudio19-dev
+  sudo apt-get install portaudio19-dev libopus0 libopus-dev
   ```
 ### **MacOS**
 - [**PortAudio**](https://www.portaudio.com/) (for audio input handling)
+- [**Opus**](https://opus-codec.org/) (for audio codec)
   ```bash
-  brew install portaudio
+  brew install portaudio opus
+  ```
+  
+  **Important for macOS users**: Add the Opus library path to your environment:
+  ```bash
+  # Add to your ~/.zshrc or run before using live-translation
+  export DYLD_LIBRARY_PATH="/opt/homebrew/opt/opus/lib:$DYLD_LIBRARY_PATH"
+  
+  # Or source the provided environment file
+  source ~/live-translation-env.sh
   ```
 ---
 
@@ -321,13 +336,125 @@ The server listens on a WebSocket endpoint (default: `ws://localhost:8765`) and 
 
 ### Client Examples
 For fully working, ***yet simple***, examples in multiple languages, see [./examples/clients](https://github.com/AbdullahHendy/live-translation/tree/main/examples/clients)
-To create more complex clients, look at the [python client](https://github.com/AbdullahHendy/live-translation/blob/main/live_translation/client/client.py) for guidance.  
+To create more complex clients, look at the [python client](https://github.com/AbdullahHendy/live-translation/blob/main/live_translation/client/client.py) for guidance.
 Available Examples:
 - **Node.js**
 - **Browser JS**
 - **Go**
 - **C#**
 - **Kotlin/Android**
+
+---
+
+## 🇻🇳 Vietnamese Language Support
+
+The system now supports Vietnamese language through specialized models optimized for Vietnamese speech recognition and translation.
+
+### ASR Backends
+
+#### 1. **Whisper** (Default)
+OpenAI's Whisper supports Vietnamese along with 99 other languages using the language code `vi`.
+
+**Example:**
+```bash
+# Vietnamese to English translation using Whisper
+live-translate-server --src_lang vi --tgt_lang en --whisper_model base
+```
+
+#### 2. **PhoWhisper** (Vietnamese-Optimized)
+[VinAI's PhoWhisper](https://huggingface.co/vinai/PhoWhisper-small) is a Vietnamese-optimized ASR model based on Whisper, specifically fine-tuned for Vietnamese speech.
+
+**Available Models:**
+- `vinai/PhoWhisper-small` (default, faster)
+- `vinai/PhoWhisper-large` (more accurate)
+
+**Example:**
+```bash
+# Vietnamese ASR using PhoWhisper
+live-translate-server \
+  --asr_backend phowhisper \
+  --whisper_model vinai/PhoWhisper-small \
+  --src_lang vi \
+  --tgt_lang en
+```
+
+### NMT Backends
+
+#### 1. **MarianMT** (Default)
+Helsinki-NLP's MarianMT supports many language pairs including Vietnamese.
+
+**Example:**
+```bash
+# Vietnamese to English using MarianMT
+live-translate-server --src_lang vi --tgt_lang en --nmt_backend marian
+```
+
+#### 2. **VinAI Translate** (Vietnamese⇄English Only)
+[VinAI's translation models](https://huggingface.co/vinai/vinai-translate-vi2en-v2) provide state-of-the-art Vietnamese⇄English translation quality.
+
+**Available Models:**
+- `vinai/vinai-translate-vi2en-v2` (Vietnamese → English)
+- `vinai/vinai-translate-en2vi-v2` (English → Vietnamese)
+
+**Example - Vietnamese to English:**
+```bash
+live-translate-server \
+  --asr_backend phowhisper \
+  --whisper_model vinai/PhoWhisper-small \
+  --nmt_backend vinai \
+  --trans_model vinai/vinai-translate-vi2en-v2 \
+  --src_lang vi \
+  --tgt_lang en
+```
+
+**Example - English to Vietnamese:**
+```bash
+live-translate-server \
+  --asr_backend whisper \
+  --whisper_model base \
+  --nmt_backend vinai \
+  --trans_model vinai/vinai-translate-en2vi-v2 \
+  --src_lang en \
+  --tgt_lang vi
+```
+
+### Vietnamese Python API Example
+
+```python
+from live_translation import LiveTranslationServer, ServerConfig
+
+def main():
+    # Vietnamese to English with PhoWhisper + VinAI Translate
+    config = ServerConfig(
+        device="cpu",  # or "cuda" for GPU
+        asr_backend="phowhisper",
+        whisper_model="vinai/PhoWhisper-small",
+        nmt_backend="vinai",
+        trans_model="vinai/vinai-translate-vi2en-v2",
+        src_lang="vi",
+        tgt_lang="en",
+        ws_port=8765,
+        log="print",
+        codec="opus",
+    )
+
+    server = LiveTranslationServer(config)
+    server.run(blocking=True)
+
+if __name__ == "__main__":
+    main()
+```
+
+### Performance Recommendations
+
+For best Vietnamese language performance:
+
+1. **Use PhoWhisper for ASR**: Provides better Vietnamese speech recognition than standard Whisper
+2. **Use VinAI Translate for NMT**: Offers superior translation quality for Vietnamese⇄English pairs
+3. **GPU recommended**: Both PhoWhisper and VinAI models benefit from GPU acceleration (`--device cuda`)
+4. **Model sizes**:
+   - For development/testing: `vinai/PhoWhisper-small`
+   - For production: `vinai/PhoWhisper-large` (requires more GPU memory)
 
 ---
 
@@ -430,6 +557,22 @@ This project was tested and developed on the following system configuration:
     author = {Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya},
     publisher = {arXiv},
     year = {2022}
+  }
+
+  @misc{PhoWhisper,
+    title={PhoWhisper: Automatic Speech Recognition for Vietnamese},
+    author={VinAI Research},
+    year={2023},
+    publisher={Hugging Face},
+    howpublished={\url{https://huggingface.co/vinai/PhoWhisper-small}}
+  }
+
+  @misc{VinAITranslate,
+    title={High-Quality Vietnamese-English Neural Machine Translation},
+    author={VinAI Research},
+    year={2023},
+    publisher={Hugging Face},
+    howpublished={\url{https://huggingface.co/vinai/vinai-translate-vi2en-v2}}
   }
 
   @misc{Silero VAD,

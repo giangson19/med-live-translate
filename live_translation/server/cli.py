@@ -18,7 +18,9 @@ def main():
     # Define the configuration object based on CLI arguments
     cfg = Config(
         device=args.device,
+        asr_backend=args.asr_backend,
         whisper_model=args.whisper_model,
+        nmt_backend=args.nmt_backend,
         trans_model=args.trans_model,
         src_lang=args.src_lang,
         tgt_lang=args.tgt_lang,

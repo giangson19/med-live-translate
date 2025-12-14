@@ -14,18 +14,27 @@ class Config:
     Args:
         device (str): Device for processing ('cpu', 'cuda'). Default is 'cpu'.
 
+        asr_backend (str): ASR backend to use ('whisper', 'phowhisper').
+            Default is 'whisper'.
+
         whisper_model (str): Whisper model size ('tiny', 'base', 'small',
             'medium', 'large', 'large-v2', 'large-v3', 'large-v3-turbo').
+            For PhoWhisper: 'vinai/PhoWhisper-small', 'vinai/PhoWhisper-large'.
             Default is 'base'.
 
-        trans_model (str): Translation model ('Helsinki-NLP/opus-mt',
-            'Helsinki-NLP/opus-mt-tc-big'). NOTE: Don't include source and
-            target languages here. Default is 'Helsinki-NLP/opus-mt'.
+        nmt_backend (str): NMT backend to use ('marian', 'vinai').
+            Default is 'marian'.
+
+        trans_model (str): Translation model. For Marian: ('Helsinki-NLP/opus-mt',
+            'Helsinki-NLP/opus-mt-tc-big'). For VinAI: use full model name like
+            'vinai/vinai-translate-vi2en-v2' or 'vinai/vinai-translate-en2vi-v2'.
+            NOTE: For Marian, don't include source and target languages here.
+            Default is 'Helsinki-NLP/opus-mt'.
 
         src_lang (str): Source/Input language for transcription (e.g., 'en',
-            'fr'). Default is 'en'.
+            'fr', 'vi'). Default is 'en'.
 
-        tgt_lang (str): Target language for translation (e.g., 'es', 'de').
+        tgt_lang (str): Target language for translation (e.g., 'es', 'de', 'vi').
             Default is 'es'.
 
         log (str): Logging method ('None', 'print', 'file').
@@ -65,7 +74,9 @@ class Config:
     def __init__(
         self,
         device: str = "cpu",
+        asr_backend: str = "whisper",
         whisper_model: str = "base",
+        nmt_backend: str = "marian",
         trans_model: str = "Helsinki-NLP/opus-mt",
         src_lang: str = "en",
         tgt_lang: str = "es",
@@ -100,7 +111,9 @@ class Config:
 
         # Mutable Settings
         self.DEVICE = device
+        self.ASR_BACKEND = asr_backend
         self.WHISPER_MODEL = whisper_model
+        self.NMT_BACKEND = nmt_backend
         self.TRANS_MODEL = trans_model
         self.SRC_LANG = src_lang
         self.TGT_LANG = tgt_lang
@@ -118,22 +131,50 @@ class Config:
     def _validate(self):
         """Validate arguments before applying them."""
 
-        # Validate OpusMT translation model and language pair if not transcribe only
+        # Validate ASR backend
+        if self.ASR_BACKEND not in ["whisper", "phowhisper"]:
+            raise ValueError(
+                "🚨 'asr_backend' must be one of the following: 'whisper', 'phowhisper'."
+            )
+
+        # Validate NMT backend
+        if self.NMT_BACKEND not in ["marian", "vinai"]:
+            raise ValueError(
+                "🚨 'nmt_backend' must be one of the following: 'marian', 'vinai'."
+            )
+
+        # Validate translation model and language pair if not transcribe only
         if not self.TRANSCRIBE_ONLY:
-            model_name = f"{self.TRANS_MODEL}-{self.SRC_LANG}-{self.TGT_LANG}"
-            try:
-                hf_hub.model_info(model_name)  # Check if the model exists
-            except hf_errors.RepositoryNotFoundError:
-                raise ValueError(
-                    f"\n🚨 The model for the language pair "
-                    f"'{self.SRC_LANG}-{self.TGT_LANG}' could not be found. "
-                    "Ensure the language pair is supported by OpusMT on "
-                    "Hugging Face (Helsinki-NLP models)."
-                )
-            except Exception as e:
-                raise ValueError(
-                    f"🚨 An error when verifying the translation model: {str(e)}"
-                )
+            if self.NMT_BACKEND == "marian":
+                model_name = f"{self.TRANS_MODEL}-{self.SRC_LANG}-{self.TGT_LANG}"
+                try:
+                    hf_hub.model_info(model_name)  # Check if the model exists
+                except hf_errors.RepositoryNotFoundError:
+                    raise ValueError(
+                        f"\n🚨 The model for the language pair "
+                        f"'{self.SRC_LANG}-{self.TGT_LANG}' could not be found. "
+                        "Ensure the language pair is supported by OpusMT on "
+                        "Hugging Face (Helsinki-NLP models)."
+                    )
+                except Exception as e:
+                    raise ValueError(
+                        f"🚨 An error when verifying the translation model: {str(e)}"
+                    )
+            elif self.NMT_BACKEND == "vinai":
+                # For VinAI models, validate the full model name
+                try:
+                    hf_hub.model_info(self.TRANS_MODEL)
+                except hf_errors.RepositoryNotFoundError:
+                    raise ValueError(
+                        f"\n🚨 The VinAI translation model '{self.TRANS_MODEL}' "
+                        "could not be found on Hugging Face. "
+                        "Valid models: 'vinai/vinai-translate-vi2en-v2', "
+                        "'vinai/vinai-translate-en2vi-v2'."
+                    )
+                except Exception as e:
+                    raise ValueError(
+                        f"🚨 An error when verifying the translation model: {str(e)}"
+                    )
 
         # Validate silence_threshold (must be greater than or equal 1.5)
         if self.SILENCE_THRESHOLD < 1.5:
@@ -166,32 +207,48 @@ class Config:
                 "https://download.pytorch.org/whl/cu126`"
             )
 
-        # Validate whisper model
-        if self.WHISPER_MODEL not in [
-            "tiny",
-            "base",
-            "small",
-            "medium",
-            "large",
-            "large-v2",
-            "large-v3",
-            "large-v3-turbo",
-        ]:
-            raise ValueError(
-                "🚨 'whisper_model' must be one of the following: 'tiny', "
-                "'base', 'small', 'medium', 'large', 'large-v2', 'large-v3', "
-                "'large-v3-turbo'."
-            )
+        # Validate ASR model
+        if self.ASR_BACKEND == "whisper":
+            if self.WHISPER_MODEL not in [
+                "tiny",
+                "base",
+                "small",
+                "medium",
+                "large",
+                "large-v2",
+                "large-v3",
+                "large-v3-turbo",
+            ]:
+                raise ValueError(
+                    "🚨 'whisper_model' must be one of the following: 'tiny', "
+                    "'base', 'small', 'medium', 'large', 'large-v2', 'large-v3', "
+                    "'large-v3-turbo'."
+                )
+        elif self.ASR_BACKEND == "phowhisper":
+            # Validate PhoWhisper model from HuggingFace
+            try:
+                hf_hub.model_info(self.WHISPER_MODEL)
+            except hf_errors.RepositoryNotFoundError:
+                raise ValueError(
+                    f"\n🚨 The PhoWhisper model '{self.WHISPER_MODEL}' "
+                    "could not be found on Hugging Face. "
+                    "Valid models: 'vinai/PhoWhisper-small', 'vinai/PhoWhisper-large'."
+                )
+            except Exception as e:
+                raise ValueError(
+                    f"🚨 An error when verifying the ASR model: {str(e)}"
+                )
 
-        # Validate translation model
-        if self.TRANS_MODEL not in [
-            "Helsinki-NLP/opus-mt",
-            "Helsinki-NLP/opus-mt-tc-big",
-        ]:
-            raise ValueError(
-                "🚨 'trans_model' must be one of the following: "
-                "'Helsinki-NLP/opus-mt', 'Helsinki-NLP/opus-mt-tc-big'. "
-            )
+        # Validate translation model (only for Marian backend)
+        if self.NMT_BACKEND == "marian":
+            if self.TRANS_MODEL not in [
+                "Helsinki-NLP/opus-mt",
+                "Helsinki-NLP/opus-mt-tc-big",
+            ]:
+                raise ValueError(
+                    "🚨 'trans_model' must be one of the following: "
+                    "'Helsinki-NLP/opus-mt', 'Helsinki-NLP/opus-mt-tc-big'. "
+                )
 
         # Validate logging method
         if self.LOG not in [None, "print", "file"]:

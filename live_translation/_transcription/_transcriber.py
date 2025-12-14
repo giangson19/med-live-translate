@@ -7,6 +7,7 @@ import torch
 import threading
 import numpy as np
 from faster_whisper import WhisperModel
+from transformers import pipeline
 from ..server import config
 
 
@@ -35,14 +36,26 @@ class Transcriber(mp.Process):
         self._output_queue = output_queue
 
     def run(self):
-        """Load the Whisper model and transcribe audio segments."""
+        """Load the ASR model and transcribe audio segments."""
 
         self._stop_event = self._stop_event
         try:
-            print("🔄 Transcriber: Loading Whisper model...")
-            self.whisper_model = WhisperModel(
-                self._cfg.WHISPER_MODEL, compute_type="float32", device=self._cfg.DEVICE
-            )
+            # Load model based on backend
+            if self._cfg.ASR_BACKEND == "whisper":
+                print("🔄 Transcriber: Loading Whisper model...")
+                self.asr_model = WhisperModel(
+                    self._cfg.WHISPER_MODEL, compute_type="float32", device=self._cfg.DEVICE
+                )
+                self.use_phowhisper = False
+            elif self._cfg.ASR_BACKEND == "phowhisper":
+                print(f"🔄 Transcriber: Loading PhoWhisper model ({self._cfg.WHISPER_MODEL})...")
+                self.asr_model = pipeline(
+                    "automatic-speech-recognition",
+                    model=self._cfg.WHISPER_MODEL,
+                    device=0 if self._cfg.DEVICE == "cuda" else -1
+                )
+                self.use_phowhisper = True
+
             print("📝 Transcriber: Ready to transcribe audio...")
 
             while not (self._stop_event.is_set() and self._audio_queue.empty()):
@@ -55,12 +68,20 @@ class Transcriber(mp.Process):
                 try:
                     # Normalize and transcribe the audio segment
                     audio_segment = audio_segment.astype(np.float32)
-                    with torch.inference_mode():
-                        segments, _ = self.whisper_model.transcribe(
-                            audio_segment, language=self._cfg.SRC_LANG
-                        )
 
-                    transcription = " ".join(seg.text for seg in segments)
+                    if self.use_phowhisper:
+                        # PhoWhisper uses transformers pipeline
+                        with torch.inference_mode():
+                            result = self.asr_model(audio_segment)
+                        transcription = result['text']
+                    else:
+                        # Standard Whisper uses faster-whisper
+                        with torch.inference_mode():
+                            segments, _ = self.asr_model.transcribe(
+                                audio_segment, language=self._cfg.SRC_LANG
+                            )
+                        transcription = " ".join(seg.text for seg in segments)
+
                     if transcription.strip():
                         if self._cfg.TRANSCRIBE_ONLY:
                             entry = {

@@ -68,41 +68,55 @@ def get_args():
     )
 
     parser.add_argument(
+        "--asr_backend",
+        type=str,
+        choices=["whisper", "phowhisper"],
+        default="whisper",
+        help=(
+            "ASR backend to use ('whisper', 'phowhisper').\n"
+            "- 'whisper': OpenAI Whisper (supports 99 languages)\n"
+            "- 'phowhisper': Vietnamese-optimized Whisper (vinai/PhoWhisper)\n"
+            "Default is 'whisper'."
+        ),
+    )
+
+    parser.add_argument(
         "--whisper_model",
         type=str,
-        choices=[
-            "tiny",
-            "base",
-            "small",
-            "medium",
-            "large",
-            "large-v2",
-            "large-v3",
-            "large-v3-turbo",
-        ],
         default="base",
         help=(
-            "Whisper model size ('tiny', 'base', 'small', 'medium', "
-            "'large', 'large-v2', 'large-v3', 'large-v3-turbo). \n"
-            "NOTE: Running large models like 'large-v3', or 'large-v3-turbo' "
-            "might require a decent GPU with CUDA support for reasonable performance. "
-            "\n"
-            "NOTE: large-v3-turbo has great accuracy while being significantly faster "
-            "than the original large-v3 model. see: "
-            "https://github.com/openai/whisper/discussions/2363 \n"
+            "ASR model to use.\n"
+            "For Whisper backend: 'tiny', 'base', 'small', 'medium', "
+            "'large', 'large-v2', 'large-v3', 'large-v3-turbo'.\n"
+            "For PhoWhisper backend: 'vinai/PhoWhisper-small', 'vinai/PhoWhisper-large'.\n"
+            "NOTE: Running large models like 'large-v3' or 'large-v3-turbo' "
+            "might require a decent GPU with CUDA support for reasonable performance.\n"
             "Default is 'base'."
+        ),
+    )
+
+    parser.add_argument(
+        "--nmt_backend",
+        type=str,
+        choices=["marian", "vinai"],
+        default="marian",
+        help=(
+            "NMT backend to use ('marian', 'vinai').\n"
+            "- 'marian': Helsinki-NLP MarianMT (supports many language pairs)\n"
+            "- 'vinai': Vietnamese translation models (vi<->en only)\n"
+            "Default is 'marian'."
         ),
     )
 
     parser.add_argument(
         "--trans_model",
         type=str,
-        choices=["Helsinki-NLP/opus-mt", "Helsinki-NLP/opus-mt-tc-big"],
         default="Helsinki-NLP/opus-mt",
         help=(
-            "Translation model ('Helsinki-NLP/opus-mt', "
-            "'Helsinki-NLP/opus-mt-tc-big'). \n"
-            "NOTE: Don't include source and target languages here.\n"
+            "Translation model to use.\n"
+            "For Marian backend: 'Helsinki-NLP/opus-mt', 'Helsinki-NLP/opus-mt-tc-big'.\n"
+            "  NOTE: Don't include source and target languages for Marian.\n"
+            "For VinAI backend: 'vinai/vinai-translate-vi2en-v2', 'vinai/vinai-translate-en2vi-v2'.\n"
             "Default is 'Helsinki-NLP/opus-mt'."
         ),
     )
@@ -113,7 +127,7 @@ def get_args():
         type=str,
         default="en",
         help=(
-            "Source/Input language for transcription (e.g., 'en', 'fr').\n"
+            "Source/Input language for transcription (e.g., 'en', 'fr', 'vi').\n"
             "Default is 'en'."
         ),
     )
@@ -122,7 +136,7 @@ def get_args():
         "--tgt_lang",
         type=str,
         default="es",
-        help=("Target language for translation (e.g., 'es', 'de').\nDefault is 'es'."),
+        help=("Target language for translation (e.g., 'es', 'de', 'vi').\nDefault is 'es'."),
     )
 
     # Logging Settings
