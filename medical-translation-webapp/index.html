@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedComms - Vietnamese-English Medical Speech Translation</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        window.LIBOPUS_WASM_URL = "./libopus.wasm";
+    </script>
+    <script src="./libopus.wasm.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🏥 MedComms</h1>
+                <p class="subtitle">Vietnamese-English Medical Speech Translation</p>
+            </div>
+        </header>
+
+        <!-- Output Panels -->
+        <div class="output-section">
+            <div class="output-panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <h3 class="panel-title">📝 Source</h3>
+                        <select class="language-dropdown" id="source-language">
+                            <option value="vi">🇻🇳 Vietnamese</option>
+                            <option value="en">🏴󠁧󠁢󠁥󠁮󠁧󠁿 English</option>
+                        </select>
+                        <button class="switch-btn" id="switch-languages" title="Switch languages">⇄</button>
+                    </div>
+                    <button class="copy-btn" id="copy-source" title="Copy to clipboard" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="panel-content" id="source-content">
+                    <!-- Action Buttons -->
+                    <div class="action-buttons" id="action-buttons">
+                        <button class="action-btn" id="record-action-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" x2="12" y1="19" y2="22"></line>
+                            </svg>
+                            <span>Record Audio</span>
+                        </button>
+                        <button class="action-btn" id="upload-action-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" x2="12" y1="3" y2="15"></line>
+                            </svg>
+                            <span>Upload Audio</span>
+                        </button>
+                        <button class="action-btn" id="text-action-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 6.1H3"></path>
+                                <path d="M21 12.1H3"></path>
+                                <path d="M15.1 18H3"></path>
+                            </svg>
+                            <span>Type Text</span>
+                        </button>
+                    </div>
+
+                    <!-- Recording Interface -->
+                    <div class="active-interface" id="record-interface" style="display: none;">
+                        <button class="toggle-record-btn" id="toggle-record-btn">
+                            <div class="toggle-icon"></div>
+                            <span class="toggle-text">Start Recording</span>
+                        </button>
+                        <button class="back-btn" id="record-back-btn">← Back</button>
+                    </div>
+
+                    <!-- Upload Interface -->
+                    <div class="active-interface" id="upload-interface" style="display: none;">
+                        <div class="upload-area" id="upload-area">
+                            <input type="file" id="audio-file" accept="audio/*" hidden>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" x2="12" y1="3" y2="15"></line>
+                            </svg>
+                            <p class="upload-text">Click or drag audio file here</p>
+                            <p class="upload-hint">Supports MP3, WAV, M4A, OGG</p>
+                        </div>
+                        <button class="process-btn" id="process-audio-btn" disabled>Process Audio</button>
+                        <button class="back-btn" id="upload-back-btn">← Back</button>
+                    </div>
+
+                    <!-- Text Interface -->
+                    <div class="active-interface" id="text-interface" style="display: none;">
+                        <div class="text-input-container">
+                            <textarea
+                                id="text-input"
+                                placeholder="Enter medical text to translate..."
+                                rows="12"
+                            ></textarea>
+                            <div class="char-count" id="char-count">0 / 5000</div>
+                        </div>
+                        <button class="translate-btn" id="translate-btn" disabled>Translate Text</button>
+                        <button class="back-btn" id="text-back-btn">← Back</button>
+                    </div>
+
+                    <!-- Output Text -->
+                    <div id="source-output" style="display: none;">
+                        <p class="output-text" id="source-text"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="output-panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <h3 class="panel-title">🌍 Translation</h3>
+                        <select class="language-dropdown" id="target-language">
+                            <option value="en">🏴󠁧󠁢󠁥󠁮󠁧󠁿 English</option>
+                            <option value="vi">🇻🇳 Vietnamese</option>
+                        </select>
+                    </div>
+                    <button class="copy-btn" id="copy-target" title="Copy to clipboard" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                            <path d="M4 16c-1.1 0-2-.9-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="panel-content" id="target-content">
+                    <p class="empty-state">No translation yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dialogue History -->
+        <div class="history-section">
+            <div class="history-header">
+                <h3>📜 Dialogue History</h3>
+                <button class="clear-history-btn" id="clear-history-btn">Clear</button>
+            </div>
+            <div class="history-content" id="history-content">
+                <p class="empty-history">No dialogue history yet</p>
+            </div>
+        </div>
+
+        <!-- Connection Log (collapsible) -->
+        <div class="log-section">
+            <button class="log-toggle" id="log-toggle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                Connection Log
+            </button>
+            <div class="log-content collapsed" id="log-content"></div>
+        </div>
+
+        <!-- Copyright Footer -->
+        <footer class="copyright-footer">
+            <p>&copy; 2025 College of Engineering and Computer Science & College of Health Sciences, VinUniversity</p>
+        </footer>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
