@@ -5,7 +5,8 @@
 
 // Configuration
 const CONFIG = {
-    WS_BASE_URL: 'ws://localhost',
+    // Use environment variable if available, otherwise fall back to localhost
+    WS_BASE_URL: window.ENV_CONFIG?.BACKEND_URL || 'ws://localhost',
     PORTS: {
         'vi-en': 8765,  // Vietnamese to English
         'en-vi': 8766   // English to Vietnamese
@@ -18,6 +19,13 @@ const CONFIG = {
     APPLICATION_VOIP: true,
     MAX_TEXT_LENGTH: 5000
 };
+
+// Log configuration for debugging
+console.log('🔧 Configuration:', {
+    environment: window.ENV_CONFIG?.NODE_ENV || 'development',
+    backendUrl: CONFIG.WS_BASE_URL,
+    ports: CONFIG.PORTS
+});
 
 // Application State
 const state = {

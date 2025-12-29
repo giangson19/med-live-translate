@@ -4,9 +4,12 @@ frontend:
     preBuild:
       commands:
         - echo "Preparing medical-translation-webapp for deployment"
+        - echo "Environment - BACKEND_URL:$BACKEND_URL"
     build:
       commands:
-        - echo "No build step required - serving static files"
+        - echo "Injecting environment variables..."
+        - chmod +x build-config.sh
+        - ./build-config.sh
   artifacts:
     # Serve files from the medical-translation-webapp subdirectory
     baseDirectory: medical-translation-webapp
