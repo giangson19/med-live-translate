@@ -1,0 +1,16 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Preparing medical-translation-webapp for deployment"
+    build:
+      commands:
+        - echo "No build step required - serving static files"
+  artifacts:
+    # Serve files from the medical-translation-webapp subdirectory
+    baseDirectory: medical-translation-webapp
+    files:
+      - '**/*'
+  cache:
+    paths: []
