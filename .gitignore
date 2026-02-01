@@ -179,3 +179,4 @@ cython_debug/
 
 # Transcripts
 transcripts/
+.DS_Store

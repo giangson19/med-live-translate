@@ -9,7 +9,7 @@ A modern, responsive web application for real-time Vietnamese ↔ English medica
 - **One-Click Language Swap**: Easily toggle between source and target languages
 - **Default**: Vietnamese → English
 
-### Three Input Modes
+### Two Input Modes
 
 #### 1. 📱 Record Audio (Live Translation)
 - Real-time speech-to-text transcription
@@ -17,13 +17,7 @@ A modern, responsive web application for real-time Vietnamese ↔ English medica
 - Uses WebSocket streaming for low latency
 - Opus codec for efficient audio transmission
 
-#### 2. 📁 Upload Audio
-- Support for multiple audio formats (MP3, WAV, M4A, OGG)
-- Drag-and-drop interface
-- Automatic audio processing and translation
-- Progress indicators
-
-#### 3. ✍️ Text Input
+#### 2. ✍️ Text Input
 - Direct text translation
 - Character counter (max 5000 characters)
 - Medical terminology optimized
@@ -67,8 +61,8 @@ live-translate-server \
 #### Start English → Vietnamese Server
 ```bash
 live-translate-server \
-  --asr_backend whisper \
-  --whisper_model base \
+  --asr_backend phowhisper \
+  --whisper_model vinai/PhoWhisper-small \
   --nmt_backend vinai \
   --trans_model vinai/vinai-translate-en2vi-v2 \
   --src_lang en \
@@ -111,17 +105,7 @@ Then open: `http://localhost:8080`
 6. **Stop Recording**: Click "Stop Recording" when done
 7. **Copy Results**: Use copy buttons to save transcription or translation
 
-### 2. Upload Audio Mode
-
-1. **Select Language Direction**: Choose your translation direction
-2. **Upload File**:
-   - Click the upload area to browse for a file, OR
-   - Drag and drop an audio file onto the upload area
-3. **Process Audio**: Click "Process Audio" button
-4. **Wait for Results**: The app will process the entire audio file
-5. **Copy Results**: Use copy buttons to save results
-
-### 3. Text Input Mode
+### 2. Text Input Mode
 
 1. **Select Language Direction**: Choose your translation direction
 2. **Enter Text**: Type or paste medical text (max 5000 characters)
@@ -208,15 +192,6 @@ The application uses CSS Grid and Flexbox for responsive layout. Modify breakpoi
 2. **Check Firewall**: Allow connections on ports 8765 and 8766
 3. **Check Server Logs**: Look for errors in server output
 4. **Verify Ports**: Make sure ports match configuration in `app.js`
-
-### Audio Upload Not Working
-
-**Issue**: Uploaded audio file doesn't process
-
-**Solutions**:
-1. **Check File Format**: Ensure file is a supported audio format (MP3, WAV, M4A, OGG)
-2. **Check File Size**: Very large files may take time to process
-3. **Check Server Capacity**: Server may have memory limitations for large files
 
 ### Text Translation Not Working
 
@@ -320,7 +295,7 @@ This application is part of the live-translation project. For contributions:
 
 1. Test thoroughly with both language directions
 2. Ensure responsive design works on mobile
-3. Verify all three input modes function correctly
+3. Verify both input modes function correctly
 4. Update documentation for any configuration changes
 
 ## 📄 License

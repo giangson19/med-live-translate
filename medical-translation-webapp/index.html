@@ -52,14 +52,6 @@
                             </svg>
                             <span>Record Audio</span>
                         </button>
-                        <button class="action-btn" id="upload-action-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" x2="12" y1="3" y2="15"></line>
-                            </svg>
-                            <span>Upload Audio</span>
-                        </button>
                         <button class="action-btn" id="text-action-btn">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M17 6.1H3"></path>
@@ -77,22 +69,6 @@
                             <span class="toggle-text">Start Recording</span>
                         </button>
                         <button class="back-btn" id="record-back-btn">← Back</button>
-                    </div>
-
-                    <!-- Upload Interface -->
-                    <div class="active-interface" id="upload-interface" style="display: none;">
-                        <div class="upload-area" id="upload-area">
-                            <input type="file" id="audio-file" accept="audio/*" hidden>
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" x2="12" y1="3" y2="15"></line>
-                            </svg>
-                            <p class="upload-text">Click or drag audio file here</p>
-                            <p class="upload-hint">Supports MP3, WAV, M4A, OGG</p>
-                        </div>
-                        <button class="process-btn" id="process-audio-btn" disabled>Process Audio</button>
-                        <button class="back-btn" id="upload-back-btn">← Back</button>
                     </div>
 
                     <!-- Text Interface -->

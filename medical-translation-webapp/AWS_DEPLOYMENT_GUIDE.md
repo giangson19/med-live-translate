@@ -694,12 +694,7 @@ Since we're using self-signed certificates on EC2, you need to accept them first
    - Speak in English
    - Verify transcription and translation appear
 
-5. **Test Upload Audio:**
-   - Click "Upload Audio"
-   - Upload a Vietnamese audio file
-   - Verify processing works
-
-6. **Test Type Text:**
+5. **Test Type Text:**
    - Click "Type Text"
    - Enter Vietnamese text
    - Verify translation appears

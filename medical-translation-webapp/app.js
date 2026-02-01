@@ -30,7 +30,7 @@ console.log('🔧 Configuration:', {
 // Application State
 const state = {
     currentLanguage: 'vi-en', // 'vi-en' or 'en-vi'
-    currentMode: 'record',    // 'record', 'upload', or 'text'
+    currentMode: 'record',    // 'record' or 'text'
     isRecording: false,
     isProcessing: false,
     ws: null,
@@ -39,8 +39,10 @@ const state = {
     mediaStream: null,
     audioBuffer: [],
     encoder: null,
-    currentFile: null,
-    history: []  // Store dialogue history
+    history: [],  // Store dialogue history
+    // Track current pending transcription/translation (for sentence detection)
+    pendingTranscription: '',
+    pendingTranslation: ''
 };
 
 // Language configuration
@@ -79,24 +81,18 @@ const elements = {
     // Action buttons
     actionButtons: document.getElementById('action-buttons'),
     recordActionBtn: document.getElementById('record-action-btn'),
-    uploadActionBtn: document.getElementById('upload-action-btn'),
     textActionBtn: document.getElementById('text-action-btn'),
 
     // Interfaces
     recordInterface: document.getElementById('record-interface'),
-    uploadInterface: document.getElementById('upload-interface'),
     textInterface: document.getElementById('text-interface'),
 
     // Back buttons
     recordBackBtn: document.getElementById('record-back-btn'),
-    uploadBackBtn: document.getElementById('upload-back-btn'),
     textBackBtn: document.getElementById('text-back-btn'),
 
     // Record controls
     toggleRecordBtn: document.getElementById('toggle-record-btn'),
-    uploadArea: document.getElementById('upload-area'),
-    audioFile: document.getElementById('audio-file'),
-    processAudioBtn: document.getElementById('process-audio-btn'),
 
     // Text controls
     textInput: document.getElementById('text-input'),
@@ -195,14 +191,11 @@ function showInterface(type) {
 
     // Hide all interfaces
     elements.recordInterface.style.display = 'none';
-    elements.uploadInterface.style.display = 'none';
     elements.textInterface.style.display = 'none';
 
     // Show selected interface
     if (type === 'record') {
         elements.recordInterface.style.display = 'flex';
-    } else if (type === 'upload') {
-        elements.uploadInterface.style.display = 'flex';
     } else if (type === 'text') {
         elements.textInterface.style.display = 'flex';
     }
@@ -223,7 +216,6 @@ function showActionButtons() {
 
     // Hide all interfaces
     elements.recordInterface.style.display = 'none';
-    elements.uploadInterface.style.display = 'none';
     elements.textInterface.style.display = 'none';
 
     // Clear outputs
@@ -254,23 +246,70 @@ function clearOutputs() {
 }
 
 function updateOutput(transcription, translation) {
+    // Detect if this is a new sentence (not a continuation of the previous one)
+    if (transcription && state.pendingTranscription) {
+        const isNewSentence = !isContinuation(state.pendingTranscription, transcription);
+
+        if (isNewSentence && state.pendingTranscription && state.pendingTranslation) {
+            // Save the previous completed sentence to history
+            addToHistory(state.pendingTranscription, state.pendingTranslation);
+            log('📌 Sentence completed, added to history');
+        }
+    }
+
+    // Update the display
     if (transcription) {
         if (elements.sourceText) {
             elements.sourceText.textContent = transcription;
             elements.sourceOutput.style.display = 'block';
         }
         elements.copySource.disabled = false;
+        state.pendingTranscription = transcription;
     }
 
     if (translation) {
         elements.targetContent.innerHTML = `<p class="output-text">${escapeHtml(translation)}</p>`;
         elements.copyTarget.disabled = false;
+        state.pendingTranslation = translation;
+    }
+}
+
+/**
+ * Check if newText is a continuation/update of oldText
+ * Returns true if newText extends or refines oldText (same sentence)
+ * Returns false if newText is a completely new sentence
+ */
+function isContinuation(oldText, newText) {
+    if (!oldText || !newText) return false;
+
+    // Normalize texts for comparison
+    const oldNorm = oldText.trim().toLowerCase();
+    const newNorm = newText.trim().toLowerCase();
+
+    // If new text starts with old text, it's a continuation
+    if (newNorm.startsWith(oldNorm.substring(0, Math.min(oldNorm.length, 20)))) {
+        return true;
     }
 
-    // Add to history if both are available
-    if (transcription && translation) {
-        addToHistory(transcription, translation);
+    // If old text starts with new text (refinement/correction), it's still the same sentence
+    if (oldNorm.startsWith(newNorm.substring(0, Math.min(newNorm.length, 20)))) {
+        return true;
     }
+
+    // Check for significant word overlap (handles minor corrections)
+    const oldWords = oldNorm.split(/\s+/).slice(0, 5); // First 5 words
+    const newWords = newNorm.split(/\s+/).slice(0, 5);
+
+    if (oldWords.length > 0 && newWords.length > 0) {
+        // If the first few words match, it's likely the same sentence
+        const matchingWords = oldWords.filter((word, i) => newWords[i] === word);
+        if (matchingWords.length >= Math.min(2, oldWords.length)) {
+            return true;
+        }
+    }
+
+    // Otherwise, it's a new sentence
+    return false;
 }
 
 function escapeHtml(text) {
@@ -285,6 +324,10 @@ function escapeHtml(text) {
 
 async function startRecording() {
     if (state.isRecording) return;
+
+    // Clear pending state from any previous session
+    state.pendingTranscription = '';
+    state.pendingTranslation = '';
 
     elements.toggleRecordBtn.disabled = true;
     log('🔄 Connecting to server...');
@@ -369,6 +412,16 @@ function stopRecording() {
     if (!state.isRecording) return;
 
     state.isRecording = false;
+
+    // Save any pending sentence to history before stopping
+    if (state.pendingTranscription && state.pendingTranslation) {
+        addToHistory(state.pendingTranscription, state.pendingTranslation);
+        log('📌 Final sentence added to history');
+    }
+
+    // Clear pending state
+    state.pendingTranscription = '';
+    state.pendingTranslation = '';
 
     // Close WebSocket
     if (state.ws) {
@@ -482,116 +535,6 @@ function downsampleBuffer(buffer, inputRate, targetRate) {
 }
 
 // ====================
-// Upload Audio Functions
-// ====================
-
-function handleFileSelect(file) {
-    if (!file) return;
-
-    state.currentFile = file;
-    elements.uploadArea.querySelector('.upload-text').textContent = `📁 ${file.name}`;
-    elements.processAudioBtn.disabled = false;
-    log(`📂 File selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
-}
-
-async function processAudioFile() {
-    if (!state.currentFile) return;
-
-    elements.processAudioBtn.disabled = true;
-    log('⚙️ Processing audio file...');
-
-    try {
-        // Read file as ArrayBuffer
-        const arrayBuffer = await state.currentFile.arrayBuffer();
-
-        // Decode audio
-        const audioContext = new AudioContext({ sampleRate: CONFIG.SAMPLE_RATE });
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-        log(`🎵 Audio loaded: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.sampleRate} Hz`);
-
-        // Get audio data
-        let audioData = audioBuffer.getChannelData(0); // Get first channel
-
-        // Resample to 16kHz if needed
-        if (audioBuffer.sampleRate !== CONFIG.SAMPLE_RATE) {
-            audioData = downsampleBuffer(audioData, audioBuffer.sampleRate, CONFIG.SAMPLE_RATE);
-            log(`⚙️ Resampled to ${CONFIG.SAMPLE_RATE} Hz`);
-        }
-
-        // Connect to WebSocket
-        const wsUrl = `${CONFIG.WS_BASE_URL}:${LANGUAGES[state.currentLanguage].port}`;
-        const ws = new WebSocket(wsUrl);
-
-        await new Promise((resolve, reject) => {
-            ws.onopen = resolve;
-            ws.onerror = () => reject(new Error('WebSocket connection failed'));
-            setTimeout(() => reject(new Error('Connection timeout')), 5000);
-        });
-
-        log('✅ Connected to server');
-
-        // Handle responses
-        ws.onmessage = (event) => {
-            try {
-                const msg = JSON.parse(event.data);
-                if (msg.transcription || msg.translation) {
-                    updateOutput(msg.transcription, msg.translation);
-                }
-            } catch (error) {
-                log(`❌ Failed to parse message: ${error.message}`);
-            }
-        };
-
-        // Initialize encoder
-        const encoder = new libopus.Encoder(
-            CONFIG.CHANNELS,
-            CONFIG.SAMPLE_RATE,
-            CONFIG.OPUS_BITRATE,
-            CONFIG.CHUNK_SIZE_MS,
-            CONFIG.APPLICATION_VOIP
-        );
-
-        // Convert to Int16 and send in chunks
-        const int16Data = new Int16Array(audioData.length);
-        for (let i = 0; i < audioData.length; i++) {
-            int16Data[i] = Math.max(-1, Math.min(1, audioData[i])) * 0x7fff;
-        }
-
-        // Send chunks
-        let offset = 0;
-        const sendChunk = () => {
-            if (offset >= int16Data.length) {
-                log('✅ Audio file processed');
-                ws.close();
-                audioContext.close();
-                elements.processAudioBtn.disabled = false;
-                return;
-            }
-
-            const chunk = int16Data.slice(offset, offset + CONFIG.CHUNK_SIZE);
-            encoder.input(chunk);
-            const encoded = encoder.output();
-
-            if (encoded && ws.readyState === WebSocket.OPEN) {
-                ws.send(encoded);
-            }
-
-            offset += CONFIG.CHUNK_SIZE;
-
-            // Continue sending with slight delay
-            setTimeout(sendChunk, CONFIG.CHUNK_SIZE_MS);
-        };
-
-        sendChunk();
-
-    } catch (error) {
-        log(`❌ Error processing file: ${error.message}`);
-        elements.processAudioBtn.disabled = false;
-    }
-}
-
-// ====================
 // Text Input Functions
 // ====================
 
@@ -691,13 +634,18 @@ async function copyToClipboard(text, type) {
 function addToHistory(source, target) {
     const timestamp = new Date().toLocaleString();
     const lang = LANGUAGES[state.currentLanguage];
-    
+
     const historyItem = {
+        id: Date.now(), // Unique ID for each item
         timestamp,
         source,
         target,
         sourceLanguage: lang.source.name,
-        targetLanguage: lang.target.name
+        targetLanguage: lang.target.name,
+        // Feedback fields
+        transcriptionRating: 0, // 0 = not rated, 1-5 = rating
+        translationRating: 0,
+        correctedTranslation: '' // User's corrected translation
     };
 
     // Add to beginning of array (newest first)
@@ -718,20 +666,181 @@ function renderHistory() {
     }
 
     const historyHTML = state.history.map(item => `
-        <div class="history-item">
+        <div class="history-item" data-id="${item.id}">
             <div class="history-timestamp">${item.timestamp}</div>
+
+            <!-- Transcription (Source) -->
             <div class="history-text">
-                <div class="history-label">${item.sourceLanguage}:</div>
+                <div class="history-label-row">
+                    <span class="history-label">${item.sourceLanguage} (Transcription):</span>
+                    <div class="star-rating" data-type="transcription" data-id="${item.id}">
+                        ${renderStars(item.transcriptionRating, 'transcription', item.id)}
+                    </div>
+                </div>
                 <div class="history-value">${escapeHtml(item.source)}</div>
             </div>
+
+            <!-- Translation (Target) -->
             <div class="history-text">
-                <div class="history-label">${item.targetLanguage}:</div>
+                <div class="history-label-row">
+                    <span class="history-label">${item.targetLanguage} (Translation):</span>
+                    <div class="star-rating" data-type="translation" data-id="${item.id}">
+                        ${renderStars(item.translationRating, 'translation', item.id)}
+                    </div>
+                </div>
                 <div class="history-value">${escapeHtml(item.target)}</div>
+            </div>
+
+            <!-- Correction Input -->
+            <div class="correction-section">
+                <div class="correction-label">Suggest correction:</div>
+                <div class="correction-input-wrapper">
+                    <textarea
+                        class="correction-input"
+                        data-id="${item.id}"
+                        placeholder="Enter your corrected translation..."
+                        rows="2"
+                    >${escapeHtml(item.correctedTranslation)}</textarea>
+                    <button class="save-correction-btn" data-id="${item.id}" title="Save correction">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                ${item.correctedTranslation ? '<div class="correction-saved">Correction saved</div>' : ''}
             </div>
         </div>
     `).join('');
 
     elements.historyContent.innerHTML = historyHTML;
+
+    // Attach event listeners for star ratings
+    attachRatingListeners();
+
+    // Attach event listeners for correction inputs
+    attachCorrectionListeners();
+}
+
+function renderStars(rating, type, itemId) {
+    let starsHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        const filled = i <= rating;
+        starsHTML += `
+            <span class="star ${filled ? 'filled' : ''}" data-rating="${i}" data-type="${type}" data-id="${itemId}">
+                ${filled ? '★' : '☆'}
+            </span>
+        `;
+    }
+    return starsHTML;
+}
+
+function attachRatingListeners() {
+    const stars = document.querySelectorAll('.star-rating .star');
+    stars.forEach(star => {
+        star.addEventListener('click', handleStarClick);
+        star.addEventListener('mouseenter', handleStarHover);
+        star.addEventListener('mouseleave', handleStarLeave);
+    });
+}
+
+function handleStarClick(event) {
+    const star = event.target;
+    const rating = parseInt(star.dataset.rating);
+    const type = star.dataset.type;
+    const itemId = parseInt(star.dataset.id);
+
+    // Find the history item and update rating
+    const item = state.history.find(h => h.id === itemId);
+    if (item) {
+        if (type === 'transcription') {
+            item.transcriptionRating = rating;
+        } else if (type === 'translation') {
+            item.translationRating = rating;
+        }
+
+        log(`⭐ Rated ${type}: ${rating}/5 stars`);
+
+        // Re-render the specific star rating group
+        const ratingContainer = star.parentElement;
+        ratingContainer.innerHTML = renderStars(rating, type, itemId);
+        attachRatingListeners();
+    }
+}
+
+function handleStarHover(event) {
+    const star = event.target;
+    const rating = parseInt(star.dataset.rating);
+    const container = star.parentElement;
+
+    // Highlight stars up to hovered position
+    const allStars = container.querySelectorAll('.star');
+    allStars.forEach((s, index) => {
+        if (index < rating) {
+            s.textContent = '★';
+            s.classList.add('hover');
+        } else {
+            s.textContent = '☆';
+            s.classList.remove('hover');
+        }
+    });
+}
+
+function handleStarLeave(event) {
+    const star = event.target;
+    const container = star.parentElement;
+    const type = star.dataset.type;
+    const itemId = parseInt(star.dataset.id);
+
+    // Find the actual rating and restore
+    const item = state.history.find(h => h.id === itemId);
+    if (item) {
+        const currentRating = type === 'transcription' ? item.transcriptionRating : item.translationRating;
+        const allStars = container.querySelectorAll('.star');
+        allStars.forEach((s, index) => {
+            if (index < currentRating) {
+                s.textContent = '★';
+                s.classList.add('filled');
+            } else {
+                s.textContent = '☆';
+                s.classList.remove('filled');
+            }
+            s.classList.remove('hover');
+        });
+    }
+}
+
+function attachCorrectionListeners() {
+    const saveButtons = document.querySelectorAll('.save-correction-btn');
+    saveButtons.forEach(btn => {
+        btn.addEventListener('click', handleSaveCorrection);
+    });
+
+    // Also save on Enter key (Ctrl+Enter for textarea)
+    const correctionInputs = document.querySelectorAll('.correction-input');
+    correctionInputs.forEach(input => {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                handleSaveCorrection({ target: input.parentElement.querySelector('.save-correction-btn') });
+            }
+        });
+    });
+}
+
+function handleSaveCorrection(event) {
+    const btn = event.target.closest('.save-correction-btn');
+    const itemId = parseInt(btn.dataset.id);
+    const input = document.querySelector(`.correction-input[data-id="${itemId}"]`);
+    const correction = input.value.trim();
+
+    // Find the history item and update correction
+    const item = state.history.find(h => h.id === itemId);
+    if (item) {
+        item.correctedTranslation = correction;
+        log(`📝 Correction saved for item ${itemId}`);
+
+        // Show saved indicator
+        renderHistory();
+    }
 }
 
 function clearHistory() {
@@ -767,12 +876,10 @@ elements.recordActionBtn.addEventListener('click', () => {
     // Start recording immediately
     startRecording();
 });
-elements.uploadActionBtn.addEventListener('click', () => showInterface('upload'));
 elements.textActionBtn.addEventListener('click', () => showInterface('text'));
 
 // Back buttons
 elements.recordBackBtn.addEventListener('click', showActionButtons);
-elements.uploadBackBtn.addEventListener('click', showActionButtons);
 elements.textBackBtn.addEventListener('click', showActionButtons);
 
 // Record controls
@@ -781,75 +888,6 @@ elements.toggleRecordBtn.addEventListener('click', () => {
         stopRecording();
     } else {
         startRecording();
-    }
-});
-
-// Upload controls
-elements.uploadArea.addEventListener('click', () => {
-    elements.audioFile.click();
-});
-
-elements.uploadArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    elements.uploadArea.classList.add('dragover');
-});
-
-elements.uploadArea.addEventListener('dragleave', () => {
-    elements.uploadArea.classList.remove('dragover');
-});
-
-elements.uploadArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    elements.uploadArea.classList.remove('dragover');
-
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('audio/')) {
-        elements.audioFile.files = e.dataTransfer.files;
-        handleFileSelect(file);
-    } else {
-        log('❌ Please drop an audio file');
-    }
-});
-
-elements.audioFile.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        handleFileSelect(file);
-    }
-});
-
-elements.processAudioBtn.addEventListener('click', processAudioFile);
-
-// Drag and drop on entire source panel
-elements.sourceContent.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    elements.sourceContent.classList.add('dragover');
-});
-
-elements.sourceContent.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Only remove if we're leaving the source content entirely
-    if (e.target === elements.sourceContent) {
-        elements.sourceContent.classList.remove('dragover');
-    }
-});
-
-elements.sourceContent.addEventListener('drop', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    elements.sourceContent.classList.remove('dragover');
-
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('audio/')) {
-        // Show upload interface and handle the file
-        showInterface('upload');
-        elements.audioFile.files = e.dataTransfer.files;
-        handleFileSelect(file);
-        log('📁 Audio file dropped');
-    } else {
-        log('❌ Please drop an audio file');
     }
 });
 

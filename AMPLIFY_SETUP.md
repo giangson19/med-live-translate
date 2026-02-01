@@ -127,7 +127,7 @@ https://main.d1a2b3c4d5e6f7.amplifyapp.com
 1. Open browser console (F12)
 2. Test Vietnamese → English translation
 3. Test English → Vietnamese translation
-4. Test upload and text modes
+4. Test text input mode
 
 ## Updating Your Frontend
 
