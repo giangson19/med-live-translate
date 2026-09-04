@@ -8,14 +8,12 @@ This guide walks you through deploying the medical-translation-webapp directly f
 - [ ] GitHub account (repository already set up)
 - [ ] EC2 backend deployed (see AWS_DEPLOYMENT_GUIDE.md)
 
-## Step 1: Push Amplify Configuration
+## Step 1: Push Your Work
 
-The `amplify.yml` file is already created in the root directory. Commit and push it:
+`amplify.yml` and `build-config.sh` are already committed at the repository root — nothing to add.
+Just make sure `main` is up to date, since Amplify builds from the pushed branch:
 
 ```bash
-cd /Users/giangson/coding/live-translation
-git add amplify.yml AMPLIFY_SETUP.md
-git commit -m "Add Amplify configuration for subdirectory deployment"
 git push origin main
 ```
 
@@ -31,7 +29,7 @@ git push origin main
 1. Select **"GitHub"**
 2. Click **"Continue"**
 3. Authorize AWS Amplify to access your GitHub account
-4. Select repository: **`live-translation`** (your current repo)
+4. Select repository: **`med-live-translate`**
 5. Select branch: **`main`**
 6. Click **"Next"**
 
@@ -39,7 +37,7 @@ git push origin main
 
 Amplify should automatically detect the `amplify.yml` file. You should see:
 
-- **App name**: `live-translation` (or rename to `medical-translation-app`)
+- **App name**: `med-live-translate` (or rename to `medcomms`)
 - **Environment**: `production`
 - **Build settings**: Detected from `amplify.yml`
 
@@ -67,43 +65,25 @@ https://main.d1a2b3c4d5e6f7.amplifyapp.com
 
 ## Step 3: Configure Backend Connection
 
-Now you need to update the frontend to connect to your EC2 backend.
+The backend URL is set with an **Amplify environment variable** — never by editing `app.js`.
+During the build, `build-config.sh` writes it into `medical-translation-webapp/config.env.js`,
+which `app.js` reads as `window.ENV_CONFIG.BACKEND_URL`.
 
-### Option A: Using Environment Variables (Recommended for Production)
+1. Amplify Console → your app → **"Environment variables"** → **"Manage variables"**
+2. Add:
 
-1. In Amplify Console → Your app → **"Environment variables"**
-2. Add variables:
-   - Key: `BACKEND_IP`, Value: `YOUR_EC2_ELASTIC_IP`
+   | Key | Value |
+   |---|---|
+   | `BACKEND_URL` | `wss://YOUR_EC2_ELASTIC_IP` |
+   | `NODE_ENV` | `production` |
 
-3. Update `app.js` to read from environment (requires build step)
+3. **Redeploy** for the variables to take effect: **"Redeploy this version"**, or push to `main`.
 
-### Option B: Direct Configuration (Simpler for Now)
-
-Update the WebSocket URL in `app.js`:
-
-```bash
-# Edit app.js
-nano medical-translation-webapp/app.js
-```
-
-Change line 8 from:
-```javascript
-WS_BASE_URL: 'ws://localhost',
-```
-
-To:
-```javascript
-WS_BASE_URL: 'wss://YOUR_EC2_ELASTIC_IP',  // Replace with your EC2 IP
-```
-
-Then commit and push:
-```bash
-git add medical-translation-webapp/app.js
-git commit -m "Configure WebSocket to use EC2 backend"
-git push origin main
-```
-
-Amplify will automatically redeploy in 2-3 minutes.
+Notes:
+- Use `wss://`, not `ws://` — an HTTPS page cannot open an insecure WebSocket.
+- Omit the port. `app.js` appends `8765` (vi→en) or `8766` (en→vi) itself.
+- If the deployed app still talks to `ws://localhost`, the variable is missing or the build did not
+  rerun — that string is the fallback baked into `app.js`.
 
 ## Step 4: Test Your Deployment
 
@@ -124,22 +104,21 @@ https://main.d1a2b3c4d5e6f7.amplifyapp.com
 
 ### 4.3 Test Features
 
-1. Open browser console (F12)
-2. Test Vietnamese → English translation
-3. Test English → Vietnamese translation
-4. Test text input mode
+1. Open browser console (F12) and expand the in-app **Connection Log**
+2. Test Vietnamese → English translation (record audio)
+3. Test English → Vietnamese translation (swap with ⇄, then record)
+4. Confirm completed exchanges land in **Dialogue History**
+
+(Text input mode is currently hidden pending a server-side text-only endpoint.)
 
 ## Updating Your Frontend
 
 To make updates, simply edit files and push:
 
 ```bash
-cd /Users/giangson/coding/live-translation/medical-translation-webapp
+cd medical-translation-webapp
 
-# Make your changes
-nano app.js
-nano styles.css
-nano index.html
+# Make your changes to app.js / styles.css / index.html
 
 # Commit and push
 git add .

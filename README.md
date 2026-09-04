@@ -112,8 +112,13 @@ export DYLD_LIBRARY_PATH="/opt/homebrew/opt/opus/lib:$DYLD_LIBRARY_PATH"
 
 ## 📥 Installation
 
-> **NOTE**: The `live-translation` package on PyPI is the **upstream** project and does **not** include the
-> PhoWhisper/VinAI backends or the MedComms client. Install from this repository.
+> **NOTE**: This project is distributed as **`med-live-translate`** and is not published to PyPI — install
+> it from source. The `live-translation` package on PyPI is the **upstream** project and does **not**
+> include the PhoWhisper/VinAI backends or the MedComms client.
+>
+> The importable module is still `live_translation`, so existing imports and the
+> `live-translate-*` commands are unchanged. If you previously installed under the old
+> distribution name, run `pip uninstall live-translation` first so you don't end up with both.
 
 ```bash
 git clone git@github.com:giangson19/med-live-translate.git
@@ -348,11 +353,16 @@ For the webapp, also test both language directions end to end and check a phone-
 
 ## 📄 License & credits
 
-MIT — see [`LICENSE`](./LICENSE).
+MIT — see [`LICENSE`](./LICENSE), which carries stacked copyright notices: the upstream engine
+© 2024 Abdullah Hendy, and this fork's additions © 2025 VinUniversity.
 
 Built on [live-translation](https://github.com/AbdullahHendy/live-translation) by Abdullah Hendy.
 
 © 2025 College of Engineering and Computer Science & College of Health Sciences, VinUniversity.
+
+> **Clinical use**: translations are machine-generated and are **not** a substitute for a qualified
+> medical interpreter. The MIT warranty disclaimer is a licensing term, not a clinical safety
+> assurance — treat interpreter substitution as a policy decision, not a software one.
 
 ---
 

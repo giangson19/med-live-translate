@@ -251,8 +251,10 @@ python3 -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}');
 
 ```bash
 # Clone repository (or upload your modified version)
+# NOTE: this fork carries the PhoWhisper/VinAI backends and the MedComms client.
+# The upstream AbdullahHendy/live-translation repo does NOT.
 cd ~
-git clone https://github.com/AbdullahHendy/live-translation.git
+git clone https://github.com/giangson19/med-live-translate.git live-translation
 cd live-translation
 
 # Create virtual environment
@@ -269,8 +271,8 @@ live-translate-server --help
 **If you have local modifications**, upload your code:
 
 ```bash
-# Option 1: Using SCP (from your local machine)
-cd /Users/giangson/coding/live-translation
+# Option 1: Using SCP (from your local machine, at the repo root)
+cd /path/to/med-live-translate
 scp -i ~/Downloads/medcomms-key.pem -r . ubuntu@YOUR_ELASTIC_IP:~/live-translation/
 
 # Then on EC2:
@@ -547,37 +549,28 @@ curl -i https://localhost:8765/ -k
 
 #### Step 2.1: Prepare Frontend Repository
 
-**Create separate frontend repository:**
+**No separate repository is needed.** Amplify builds the webapp directly out of the
+`medical-translation-webapp/` subdirectory of this repo, driven by `amplify.yml` in the
+repository root:
+
+```yaml
+build:
+  commands:
+    - ./build-config.sh          # injects $BACKEND_URL into config.env.js
+artifacts:
+  baseDirectory: medical-translation-webapp
+```
+
+Both `amplify.yml` and `build-config.sh` are already committed, so there is nothing to prepare —
+just make sure your work is pushed to `main`:
 
 ```bash
-# On your local machine
-cd /Users/giangson/coding/live-translation
-
-# Create new directory for frontend-only
-mkdir medical-webapp-frontend
-cd medical-webapp-frontend
-
-# Copy frontend files
-cp ../medical-translation-webapp/*.html .
-cp ../medical-translation-webapp/*.css .
-cp ../medical-translation-webapp/*.js .
-cp ../medical-translation-webapp/*.wasm .
-
-# Initialize git
-git init
-git add .
-git commit -m "Initial frontend for AWS Amplify"
-
-# Create GitHub repository
-# Go to https://github.com/new
-# Name: medical-webapp-frontend
-# Create repository (don't initialize with README)
-
-# Push to GitHub
-git remote add origin https://github.com/YOUR_USERNAME/medical-webapp-frontend.git
-git branch -M main
-git push -u origin main
+git push origin main
 ```
+
+> **NOTE**: Do **not** copy the frontend files into a standalone repo. The build script generates
+> `config.env.js` at deploy time; a hand-copied frontend loses the backend-URL injection and will
+> silently fall back to `ws://localhost`.
 
 #### Step 2.2: Deploy to AWS Amplify
 
@@ -591,14 +584,15 @@ git push -u origin main
    - Select **"GitHub"**
    - Click **"Continue"**
    - Authorize AWS Amplify to access your GitHub
-   - Select repository: `medical-webapp-frontend`
+   - Select repository: `med-live-translate`
    - Select branch: `main`
    - Click **"Next"**
 
 3. **Configure Build Settings:**
    - App name: `medcomms-translation`
    - Environment: `production`
-   - Build settings: Amplify will auto-detect static site
+   - Build settings: Amplify auto-detects `amplify.yml`; confirm it shows
+     `baseDirectory: medical-translation-webapp`
    - Click **"Next"**
 
 4. **Review and Deploy:**
@@ -610,47 +604,40 @@ git push -u origin main
    - Once deployed, you'll see: `https://main.d1a2b3c4d5e6f7.amplifyapp.com`
    - **Copy this URL** - this is your production frontend URL!
 
-#### Step 2.3: Update Frontend Configuration
+#### Step 2.3: Point the Frontend at Your EC2 Backend
 
-**Update app.js with EC2 backend URL:**
+The backend URL is **not** edited in `app.js` — it comes from an Amplify environment variable that
+`build-config.sh` writes into `config.env.js` at build time.
 
-```bash
-# On your local machine
-cd medical-webapp-frontend
-nano app.js
-```
+1. In the Amplify Console, go to your app → **"Environment variables"** → **"Manage variables"**
+2. Add:
 
-**Find the CONFIG object (around line 13) and update:**
+   | Key | Value |
+   |---|---|
+   | `BACKEND_URL` | `wss://YOUR_EC2_ELASTIC_IP` |
+   | `NODE_ENV` | `production` |
+
+   Use `wss://` (not `ws://`) — the Amplify page is served over HTTPS and browsers block insecure
+   WebSocket connections from a secure page. Do not include a port; `app.js` appends `8765` or
+   `8766` depending on the selected direction.
+
+3. **Redeploy** so the new variables take effect: Amplify Console → your app → **"Redeploy this
+   version"**, or push any commit to `main`.
+
+The generated `config.env.js` will look like:
 
 ```javascript
-const CONFIG = {
-    // IMPORTANT: Use wss:// (secure WebSocket) and your EC2 Elastic IP
-    WS_BASE_URL: 'wss://YOUR_EC2_ELASTIC_IP',  // Replace with your EC2 Elastic IP
-    PORTS: {
-        'vi-en': '8765',  // SSL port (nginx)
-        'en-vi': '8766'   // SSL port (nginx)
-    },
-    SAMPLE_RATE: 16000,
-    CHUNK_SIZE: 640,
-    OPUS_BITRATE: 30000,
-    MAX_TEXT_LENGTH: 5000,
-    LANGUAGES: {
-        'vi': 'Vietnamese',
-        'en': 'English'
-    },
-    DEFAULT_DIRECTION: 'vi-en'
+window.ENV_CONFIG = {
+    BACKEND_URL: 'wss://YOUR_EC2_ELASTIC_IP',
+    NODE_ENV: 'production'
 };
 ```
 
-**Save, commit, and push:**
+`app.js` reads it as `window.ENV_CONFIG?.BACKEND_URL` and falls back to `ws://localhost` when it is
+absent — if the deployed app is trying to reach localhost, the variable was not set or the build
+did not rerun.
 
-```bash
-git add app.js
-git commit -m "Configure WebSocket to use EC2 backend"
-git push origin main
-```
-
-**Amplify will auto-deploy** in 2-3 minutes. Watch the progress in Amplify Console.
+**Amplify auto-deploys** in 2-3 minutes on each push. Watch progress in the Amplify Console.
 
 ---
 

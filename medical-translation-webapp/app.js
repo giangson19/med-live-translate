@@ -1,6 +1,6 @@
 /**
- * Medical Translation Web Application
- * Vietnamese ↔ English Speech Translation
+ * MedComms
+ * Vietnamese ↔ English Medical Speech Translation
  */
 
 // Configuration
@@ -926,7 +926,7 @@ elements.clearHistoryBtn.addEventListener('click', clearHistory);
 
 function initialize() {
     updateLanguageUI();
-    log('🚀 Medical Translation App initialized');
+    log('🚀 MedComms initialized');
     log(`📡 Server ports: VI→EN (${CONFIG.PORTS['vi-en']}), EN→VI (${CONFIG.PORTS['en-vi']})`);
 }
 

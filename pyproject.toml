@@ -9,11 +9,15 @@ version = {attr = "live_translation.__version__"}
 include = ["live_translation*"]
 
 [project]
-name = "live-translation"
+name = "med-live-translate"
 dynamic = ["version"]
-description = "A real-time translation tool using Whisper & Opus-MT"
+description = "MedComms - real-time Vietnamese/English medical speech translation (PhoWhisper + VinAI Translate)"
 authors = [
-    { name = "Abdullah Hendy", email = "abdullah.a.hendy@gmail.com" }
+    { name = "VinUniversity College of Engineering and Computer Science" },
+    { name = "VinUniversity College of Health Sciences" },
+]
+maintainers = [
+    { name = "giangson19" },
 ]
 license = "MIT"
 license-files = ["LICENSE"]
@@ -25,11 +29,14 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
 
     "Natural Language :: English",
+    "Natural Language :: Vietnamese",
 
     "Topic :: Multimedia :: Sound/Audio :: Analysis",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
     "Topic :: Software Development :: Libraries",
     "Topic :: Utilities",
 
@@ -53,11 +60,16 @@ dependencies = [
     "sentencepiece==0.2.1",
     "opuslib==3.0.1",
 ]
-keywords = ["translation", "transcription", "speech-to-text", "real-time translation", "whisper", "marianMT", "Opus-MT", "live transcription"]
+keywords = [
+    "translation", "transcription", "speech-to-text", "real-time translation",
+    "live transcription", "whisper", "marianMT", "Opus-MT",
+    "vietnamese", "PhoWhisper", "VinAI Translate", "medical translation", "healthcare",
+]
 
 [project.urls]
-Homepage = "https://github.com/AbdullahHendy/live-translation"
-Repository = "https://github.com/AbdullahHendy/live-translation"
+Homepage = "https://github.com/giangson19/med-live-translate"
+Repository = "https://github.com/giangson19/med-live-translate"
+"Upstream project" = "https://github.com/AbdullahHendy/live-translation"
 
 [project.scripts]
 live-translate-server = "live_translation.server.cli:main"
