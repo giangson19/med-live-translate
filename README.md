@@ -1,432 +1,226 @@
 <div align="center">
 
-# Live-Translation
+# 🏥 MedComms
 
-**A real-time speech-to-text translation system built on a modular server–client architecture.**
+**Real-time Vietnamese ⇄ English speech translation for clinical settings.**
 
-[![Build](https://github.com/AbdullahHendy/live-translation/actions/workflows/ci.yml/badge.svg)](https://github.com/AbdullahHendy/live-translation/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/live-translation)](https://pypi.org/project/live-translation/)
-[![License](https://img.shields.io/github/license/AbdullahHendy/live-translation.svg)](https://github.com/AbdullahHendy/live-translation/blob/main/LICENSE)
+*A medical-focused fork of [live-translation](https://github.com/AbdullahHendy/live-translation), extending it with
+Vietnamese-optimized ASR and MT backends and a browser client built for the bedside.*
+
+[![License](https://img.shields.io/github/license/AbdullahHendy/live-translation.svg)](./LICENSE)
 [![Python >= 3.11](https://img.shields.io/badge/Python-%3E=3.11-%231f425f?logo=python)](https://www.python.org/downloads/)
 </br>
 [![Architecture](https://img.shields.io/badge/Architecture-Client--Server-informational)](https://en.wikipedia.org/wiki/Client%E2%80%93server_model)
 [![WebSocket](https://img.shields.io/badge/Protocol-WebSocket-brightgreen?logo=websocket)](https://en.wikipedia.org/wiki/WebSocket)
 [![Audio](https://img.shields.io/badge/Audio-16bit_PCM@16kHz-brightgreen?logo=sound)](https://en.wikipedia.org/wiki/Pulse-code_modulation)
-[![Streaming](https://img.shields.io/badge/Streaming-Real--time-brightgreen?logo=livejournal)](https://en.wikipedia.org/wiki/Streaming_media)
 [![Codec](https://img.shields.io/badge/Audio_Codec-Opus-blueviolet?logo=opus)](https://en.wikipedia.org/wiki/Opus_(audio_format))
 </br>
-[![Last Commit](https://img.shields.io/github/last-commit/AbdullahHendy/live-translation.svg)](https://github.com/AbdullahHendy/live-translation/commits/main)
-[![Issues](https://img.shields.io/github/issues/AbdullahHendy/live-translation)](https://github.com/AbdullahHendy/live-translation/issues)
-[![Stars](https://img.shields.io/github/stars/AbdullahHendy/live-translation?style=social)](https://github.com/AbdullahHendy/live-translation/stargazers)
-</br>
-[![Code Style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/AbdullahHendy/live-translation/blob/main/ruff.toml)
-[![codecov](https://codecov.io/github/AbdullahHendy/live-translation/graph/badge.svg)](https://codecov.io/github/AbdullahHendy/live-translation)
-</br>
-[![Client Examples](https://img.shields.io/badge/Client_Examples-Included-blueviolet?logo=github)](https://github.com/AbdullahHendy/live-translation/tree/main/examples)
-[![Node.js](https://img.shields.io/badge/Examples-Node.js-green?logo=node.js)](https://github.com/AbdullahHendy/live-translation/tree/main/examples/clients/nodejs)
-[![Browser JS](https://img.shields.io/badge/Examples-Browser_JS-yellow?logo=javascript)](https://github.com/AbdullahHendy/live-translation/tree/main/examples/clients/browser_js)
-[![C#](https://img.shields.io/badge/Examples-C%23-239120?logo=c-sharp&logoColor=white)](https://github.com/AbdullahHendy/live-translation/tree/main/examples/clients/csharpclient)
-[![Go](https://img.shields.io/badge/Examples-Go-00ADD8?logo=go)](https://github.com/AbdullahHendy/live-translation/tree/main/examples/clients/go_client)
-[![Kotlin/Android](https://img.shields.io/badge/Examples-Kotlin%2FAndroid-3DDC84?logo=kotlin&logoColor=white)](https://github.com/AbdullahHendy/live-translation/tree/main/examples/clients/android)
-</br>
-[![Powered by Opus-MT](https://img.shields.io/badge/Powered%20by-Opus--MT-blue)](https://huggingface.co/Helsinki-NLP)
-[![Powered by Whisper](https://img.shields.io/badge/Powered%20by-Whisper-green)](https://github.com/openai/whisper)
-[![Made with Python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+[![Powered by PhoWhisper](https://img.shields.io/badge/ASR-PhoWhisper-green)](https://huggingface.co/vinai/PhoWhisper-small)
+[![Powered by VinAI Translate](https://img.shields.io/badge/MT-VinAI_Translate-blue)](https://huggingface.co/vinai/vinai-translate-vi2en-v2)
+[![Deploy](https://img.shields.io/badge/Deploy-AWS_Amplify_%2B_EC2-ff9900?logo=amazonaws&logoColor=white)](./AWS_DEPLOYMENT_GUIDE.md)
+
 </div>
 
 ---
 
-## Demos
+## What this is
 
-> **NOTE**: This project is ***not*** meant to be a plug-and-play translation app for web browsers. Instead, it serves as a ***foundational enabler*** for building [real-time translation experiences](https://github.com/AbdullahHendy/live-translation/tree/main/examples).
->
+A Vietnamese-speaking patient and an English-speaking clinician need to understand each other **now**,
+not after a translated document comes back. **MedComms** is a speech translation pipeline for exactly that
+moment: a phone or laptop microphone streams audio to a translation server, and transcription and
+translation appear side by side while the person is still speaking.
 
-### 🌐 Browser Client Experience
+The system has two halves:
 
-*A javascript example client for the ***live translation*** server*
+| Half | What it is | Where |
+|---|---|---|
+| **Translation server** | Python pipeline: VAD → ASR → NMT, streaming over WebSocket | [`live_translation/`](./live_translation) |
+| **MedComms web client** | Zero-install browser front end — record, translate, keep the dialogue history | [`medical-translation-webapp/`](./medical-translation-webapp) |
 
-*See [Under the Hood](#-under-the-hood)*
+The server half is inherited from [live-translation](https://github.com/AbdullahHendy/live-translation) by
+Abdullah Hendy, an excellent general-purpose real-time translation engine. This fork adds what a
+Vietnamese clinical deployment needs: **PhoWhisper** for Vietnamese ASR, **VinAI Translate** for
+Vietnamese⇄English MT, and the MedComms client and its AWS deployment path.
 
-<a href="https://github.com/AbdullahHendy/live-translation/blob/main/doc/browser_js.gif?raw=true" target="_blank">
-  <img src="https://github.com/AbdullahHendy/live-translation/blob/main/doc/browser_js.gif?raw=true" alt="Browser-Client Demo" />
-</a>
-
-### 🪛 Under the Hood
-
-*On the left, the ***live translation*** [CLI](#cli) server*
-
-*On the right, the ***live translation*** [CLI](#cli) client*
-
-*For a deeper dive into more ways to use ***live translation*** server and clients, see the [Usage](#-usage) section*
-
-<a href="https://github.com/AbdullahHendy/live-translation/blob/main/doc/demo.gif?raw=true" target="_blank">
-  <img src="https://github.com/AbdullahHendy/live-translation/blob/main/doc/demo.gif?raw=true" alt="Server-Client Demo" />
-</a>
+Developed by the College of Engineering and Computer Science & the College of Health Sciences,
+**VinUniversity**.
 
 ---
 
-## 👷🏼‍♂️ Architecture Overview
+## 👷🏼‍♂️ Architecture
 
-***The diagram ommits finer details***
+Microphone → Opus-encoded 16 kHz mono frames over WebSocket → Silero VAD → ASR → NMT → JSON results
+streamed back to the client.
 
-<img src="https://github.com/AbdullahHendy/live-translation/blob/main/doc/live-translation-pipeline.png?raw=true" alt="Architecture Diagram" />
+<img src="./doc/live-translation-pipeline.png" alt="Architecture Diagram" />
+
+***The diagram omits finer details.***
+
+A MedComms deployment runs **two server instances**, one per direction:
+
+| Direction | Port | ASR | MT |
+|---|---|---|---|
+| Vietnamese → English | `8765` | `vinai/PhoWhisper-small` | `vinai/vinai-translate-vi2en-v2` |
+| English → Vietnamese | `8766` | `vinai/PhoWhisper-small` | `vinai/vinai-translate-en2vi-v2` |
+
+The web client picks the port matching the selected direction.
 
 ---
 
 ## ⭐ Features
 
-- Real-time speech capture using **PyAudio**
-- Voice Activity Detection (VAD) using **Silero** for more efficient processing
-- Speech-to-text transcription using:
-  - OpenAI's **Whisper** (99 languages supported)
-  - **PhoWhisper** for Vietnamese-optimized ASR
-- Translation of transcriptions using:
-  - Helsinki-NLP's **OpusMT** (many language pairs)
-  - **VinAI Translate** for high-quality Vietnamese⇄English translation
-- **Full-duplex WebSocket streaming** between client and server
-- Audio compression via **Opus** codec support for lower bandwidth usage
-- Multithreaded design for parallelized processing
-- Optional server logging:
-  - Print to **stdout**
-  - Save transcription/translation logs to a structured **.jsonl** file
-- Designed for both:
-  - Simple **CLI** usage (***live-translate-server***, ***live-translate-client***)
-  - **Python API** usage (***LiveTranslationServer***, ***LiveTranslationClient***) with Asynchronous support for embedding in larger systems
+**Clinical translation**
+- Bidirectional Vietnamese ⇄ English, swappable with one click in the browser
+- **PhoWhisper** — Vietnamese-optimized ASR, considerably better than base Whisper on Vietnamese speech
+- **VinAI Translate** — state-of-the-art Vietnamese⇄English MT
+- Dialogue history so a whole consultation stays on screen
+
+**Engine**
+- Voice Activity Detection (**Silero**) so silence never reaches the models
+- Full-duplex **WebSocket** streaming; **Opus** compression for low bandwidth on hospital Wi-Fi
+- Multithreaded/multiprocess pipeline for parallel capture, transcription, and translation
+- Also supports the general-purpose path: OpenAI **Whisper** (99 languages) + Helsinki-NLP **OpusMT**
+- Optional logging to **stdout** or structured **.jsonl** transcripts
+- Usable as a **CLI** (`live-translate-server`, `live-translate-client`) or a **Python API**
+  (`LiveTranslationServer`, `LiveTranslationClient`)
+
+**Client**
+- No framework, no build step — static HTML/CSS/ES modules plus `libopus.wasm`
+- Deployable to AWS Amplify as static files; servers on EC2 behind NGINX + TLS
 
 ---
 
 ## 📜 Prerequisites
 
-Before running the project, you need to install the following system dependencies:
-### **Debian**
-- [**PortAudio**](https://www.portaudio.com/) (for audio input handling)
-- [**Opus**](https://opus-codec.org/) (for audio codec)
-  ```bash
-  sudo apt-get install portaudio19-dev libopus0 libopus-dev
-  ```
-### **MacOS**
-- [**PortAudio**](https://www.portaudio.com/) (for audio input handling)
-- [**Opus**](https://opus-codec.org/) (for audio codec)
-  ```bash
-  brew install portaudio opus
-  ```
-  
-  **Important for macOS users**: Add the Opus library path to your environment:
-  ```bash
-  # Add to your ~/.zshrc or run before using live-translation
-  export DYLD_LIBRARY_PATH="/opt/homebrew/opt/opus/lib:$DYLD_LIBRARY_PATH"
-  
-  # Or source the provided environment file
-  source ~/live-translation-env.sh
-  ```
+System dependencies:
+
+**Debian/Ubuntu**
+```bash
+sudo apt-get install portaudio19-dev libopus0 libopus-dev
+```
+
+**macOS**
+```bash
+brew install portaudio opus
+# Add to ~/.zshrc so the Opus shared library is found at runtime:
+export DYLD_LIBRARY_PATH="/opt/homebrew/opt/opus/lib:$DYLD_LIBRARY_PATH"
+```
+
+[PortAudio](https://www.portaudio.com/) handles audio input; [Opus](https://opus-codec.org/) is the codec.
+
 ---
 
 ## 📥 Installation
 
-**(RECOMMENDED)**: install this package inside a virtual environment to avoid dependency conflicts.
+> **NOTE**: The `live-translation` package on PyPI is the **upstream** project and does **not** include the
+> PhoWhisper/VinAI backends or the MedComms client. Install from this repository.
+
 ```bash
+git clone git@github.com:giangson19/med-live-translate.git
+cd med-live-translate
+
 python -m venv .venv
 source .venv/bin/activate
+
+pip install --upgrade pip
+pip install -e .
 ```
 
-**Install** the [PyPI package](https://pypi.org/project/live-translation/):
+Verify:
 ```bash
-pip install live-translation
-```
-
-**Verify** the installation:
-```bash
-python -c "import live_translation; print(f'live-translation installed successfully\n{live_translation.__version__}')"
+python -c "import live_translation; print(live_translation.__version__)"
 ```
 
 ---
 
-## 🚀 Usage
+## 🚀 Quick start (MedComms)
 
-> **NOTE**: One can safely ignore similar warnings that might appear on **Linux** systems when running the client as it tries to open the mic:
->
-> ALSA lib pcm_dsnoop.c:567:(snd_pcm_dsnoop_open) unable to open slave
-> ALSA lib pcm_dmix.c:1000:(snd_pcm_dmix_open) unable to open slave
-> ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.rear
-> ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.center_lfe
-> ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.side
-> ALSA lib pcm_dmix.c:1000:(snd_pcm_dmix_open) unable to open slave
-> Cannot connect to server socket err = No such file or directory
-> Cannot connect to server request channel
-> jack server is not running or cannot be started
-> JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for -1, skipping unlock
-> JackShmReadWritePtr::~JackShmReadWritePtr - Init not done for -1, skipping unlock
->
+### 1. Start both translation servers
 
-### CLI
-* **demo** can be run directly from the command line:
-  > **NOTE**: This is a convenience demo cli tool to run both the **server** and the **client** with ***default*** configs. It should only be used for a quick demo. It's ***highly recommended*** to start a separate server and client for full customization as shown below.  
-  >
-  ```bash
-  live-translate-demo
-  ```
-
-* **server** can be run directly from the command line:
-  > **NOTE**: Running the server for the first time will download the required models in the **Cache** folder (e.g. `~/.cache` on linux). The downloading process in the first run might clutter the terminal view leading to scattered and unpredicted locations of the **initial server logs**. It is advised to rerun the server after all models finish downloading for better view of the **initial server logs**.
-  >
-  ```bash
-  live-translate-server [OPTIONS]
-  ```
-
-  **[OPTIONS]**
-  ```bash
-  usage: live-translate-server [-h] [--silence_threshold SILENCE_THRESHOLD] [--vad_aggressiveness {0,1,2,3,4,5,6,7,8,9}] [--max_buffer_duration {5,6,7,8,9,10}] [--codec {pcm,opus}]
-                              [--device {cpu,cuda}] [--whisper_model {tiny,base,small,medium,large,large-v2,large-v3,large-v3-turbo}]
-                              [--trans_model {Helsinki-NLP/opus-mt,Helsinki-NLP/opus-mt-tc-big}] [--src_lang SRC_LANG] [--tgt_lang TGT_LANG] [--log {print,file}] [--ws_port WS_PORT]
-                              [--transcribe_only] [--version]
-
-  Live Translation Server - Configure runtime settings.
-
-  options:
-    -h, --help            show this help message and exit
-    --silence_threshold SILENCE_THRESHOLD
-                          Number of consecutive seconds to detect SILENCE.
-                          SILENCE clears the audio buffer for transcription/translation.
-                          NOTE: Minimum value is 1.5.
-                          Default is 2.
-    --vad_aggressiveness {0,1,2,3,4,5,6,7,8,9}
-                          Voice Activity Detection (VAD) aggressiveness level (0-9).
-                          Higher values mean VAD has to be more confident to detect speech vs silence.
-                          Default is 8.
-    --max_buffer_duration {5,6,7,8,9,10}
-                          Max audio buffer duration in seconds before trimming it.
-                          Default is 7 seconds.
-    --codec {pcm,opus}    Audio codec for WebSocket communication ('pcm', 'opus').
-                          Default is 'opus'.
-    --device {cpu,cuda}   Device for processing ('cpu', 'cuda').
-                          Default is 'cpu'.
-    --whisper_model {tiny,base,small,medium,large,large-v2,large-v3,large-v3-turbo}
-                          Whisper model size ('tiny', 'base', 'small', 'medium', 'large', 'large-v2', 'large-v3', 'large-v3-turbo). 
-                          NOTE: Running large models like 'large-v3', or 'large-v3-turbo' might require a decent GPU with CUDA support for reasonable performance. 
-                          NOTE: large-v3-turbo has great accuracy while being significantly faster than the original large-v3 model. see: https://github.com/openai/whisper/discussions/2363 
-                          Default is 'base'.
-    --trans_model {Helsinki-NLP/opus-mt,Helsinki-NLP/opus-mt-tc-big}
-                          Translation model ('Helsinki-NLP/opus-mt', 'Helsinki-NLP/opus-mt-tc-big'). 
-                          NOTE: Don't include source and target languages here.
-                          Default is 'Helsinki-NLP/opus-mt'.
-    --src_lang SRC_LANG   Source/Input language for transcription (e.g., 'en', 'fr').
-                          Default is 'en'.
-    --tgt_lang TGT_LANG   Target language for translation (e.g., 'es', 'de').
-                          Default is 'es'.
-    --log {print,file}    Optional logging mode for saving transcription output.
-                            - 'file': Save each result to a structured .jsonl file in ./transcripts/transcript_{TIMESTAMP}.jsonl.
-                            - 'print': Print each result to stdout.
-                          Default is None (no logging).
-    --ws_port WS_PORT     WebSocket port the of the server.
-                          Used to listen for client audio and publish output (e.g., 8765).
-    --transcribe_only     Transcribe only mode. No translations are performed.
-    --version             Print version and exit.
-  ```
-
-* **client** can be run directly from the command line:
-  ```bash
-  live-translate-client [OPTIONS]
-  ```
-
-  **[OPTIONS]**
-  ```bash
-  usage: live-translate-client [-h] [--server SERVER] [--codec {pcm,opus}] [--version]
-
-  Live Translation Client - Stream audio to the server.
-
-  options:
-    -h, --help          show this help message and exit
-    --server SERVER     WebSocket URI of the server (e.g., ws://localhost:8765)
-    --codec {pcm,opus}  Audio codec for WebSocket communication ('pcm', 'opus').
-                        Default is 'opus'.
-    --version           Print version and exit.
-  ```
-
-### Python API
-You can also import and use ***live_translation*** directly in your Python code.
-The following is ***simple*** examples of running ***live_translation***'s server and client in a **blocking** fashion.
-For more detailed examples showing **non-blocking** and **asynchronous** workflows, see [./examples/](https://github.com/AbdullahHendy/live-translation/tree/main/examples).
-
-> **NOTE**: The examples below assumes the ***live_translation*** package has been installed as shown in the [Installation](#-installation).
->
-> **NOTE**: To run a provided example using the ***Python API***, see instructions in the [./examples/](https://github.com/AbdullahHendy/live-translation/tree/main/examples) directory.
-
-- **Server**
-  ```python
-  from live_translation import LiveTranslationServer, ServerConfig
-
-  def main():
-      config = ServerConfig(
-          device="cpu",
-          ws_port=8765,
-          log="print",
-          transcribe_only=False,
-          codec="opus",
-      )
-
-      server = LiveTranslationServer(config)
-      server.run(blocking=True)
-
-  # Main guard is CRITICAL for systems that uses spawn method to create new processes
-  # This is the case for Windows and MacOS
-  if __name__ == "__main__":
-      main()
-
-  ```
-
-- **Client**
-  ```python
-  from live_translation import LiveTranslationClient, ClientConfig
-
-  def parser_callback(entry, *args, **kwargs):
-      """Callback function to parse the output from the server.
-
-      Args:
-          entry (dict): The message from the server.
-          *args: Optional positional args passed from the client.
-          **kwargs: Optional keyword args passed from the client.
-      """
-      print(f"📝 {entry['transcription']}")
-      print(f"🌍 {entry['translation']}")
-
-      # Returning True signals the client to shutdown
-      return False
-
-  def main():
-      config = ClientConfig(
-          server_uri="ws://localhost:8765",
-          codec="opus",
-      )
-
-      client = LiveTranslationClient(config)
-      client.run(
-          callback=parser_callback,
-          callback_args=(),  # Optional: positional args to pass
-          callback_kwargs={},  # Optional: keyword args to pass
-          blocking=True,
-      )
-
-  if __name__ == "__main__":
-      main()
-
-  ```
-
-### Non-Python Integration
-If you're writing a **custom client** or integrating this system into another application, you can interact with the server directly using the WebSocket protocol.
-### Protocol Overview
-
-The server listens on a WebSocket endpoint (default: `ws://localhost:8765`) and expects the client to:
-
-- **Send**: **encoded PCM** audio using the [**Opus codec**](https://en.wikipedia.org/wiki/Opus_(audio_format)) with the following specs:
-  - Format: 16-bit signed integer (`int16`)
-  - Sample Rate: 16,000 Hz
-  - Channels: Mono (1 channel)
-  - Chunk Size: 640 samples = 1280 bytes per message (40 ms)
-  - Each encoded chunk should be sent immediately over the WebSocket
-  > **NOTE**: The server also supports receiving **raw PCM** using the ***--codec pcm*** server option. The specs are identical to above, except not encoded.
-  >
-
-- **Receive**: structured ***JSON*** messages with timestamp, transcription and translation fields
-  ```json
-  {
-    "timestamp": "2025-05-25T12:58:35.259085+00:00",
-    "transcription": "Good morning, I hope everyone's doing great.",
-    "translation": "Buenos días, espero que todo el mundo esté bien"
-  }
-
-### Client Examples
-For fully working, ***yet simple***, examples in multiple languages, see [./examples/clients](https://github.com/AbdullahHendy/live-translation/tree/main/examples/clients)
-To create more complex clients, look at the [python client](https://github.com/AbdullahHendy/live-translation/blob/main/live_translation/client/client.py) for guidance.
-Available Examples:
-- **Node.js**
-- **Browser JS**
-- **Go**
-- **C#**
-- **Kotlin/Android**
-
----
-
-## 🇻🇳 Vietnamese Language Support
-
-The system now supports Vietnamese language through specialized models optimized for Vietnamese speech recognition and translation.
-
-### ASR Backends
-
-#### 1. **Whisper** (Default)
-OpenAI's Whisper supports Vietnamese along with 99 other languages using the language code `vi`.
-
-**Example:**
-```bash
-# Vietnamese to English translation using Whisper
-live-translate-server --src_lang vi --tgt_lang en --whisper_model base
-```
-
-#### 2. **PhoWhisper** (Vietnamese-Optimized)
-[VinAI's PhoWhisper](https://huggingface.co/vinai/PhoWhisper-small) is a Vietnamese-optimized ASR model based on Whisper, specifically fine-tuned for Vietnamese speech.
-
-**Available Models:**
-- `vinai/PhoWhisper-small` (default, faster)
-- `vinai/PhoWhisper-large` (more accurate)
-
-**Example:**
-```bash
-# Vietnamese ASR using PhoWhisper
-live-translate-server \
-  --asr_backend phowhisper \
-  --whisper_model vinai/PhoWhisper-small \
-  --src_lang vi \
-  --tgt_lang en
-```
-
-### NMT Backends
-
-#### 1. **MarianMT** (Default)
-Helsinki-NLP's MarianMT supports many language pairs including Vietnamese.
-
-**Example:**
-```bash
-# Vietnamese to English using MarianMT
-live-translate-server --src_lang vi --tgt_lang en --nmt_backend marian
-```
-
-#### 2. **VinAI Translate** (Vietnamese⇄English Only)
-[VinAI's translation models](https://huggingface.co/vinai/vinai-translate-vi2en-v2) provide state-of-the-art Vietnamese⇄English translation quality.
-
-**Available Models:**
-- `vinai/vinai-translate-vi2en-v2` (Vietnamese → English)
-- `vinai/vinai-translate-en2vi-v2` (English → Vietnamese)
-
-**Example - Vietnamese to English:**
+Vietnamese → English:
 ```bash
 live-translate-server \
   --asr_backend phowhisper \
   --whisper_model vinai/PhoWhisper-small \
   --nmt_backend vinai \
   --trans_model vinai/vinai-translate-vi2en-v2 \
-  --src_lang vi \
-  --tgt_lang en
+  --src_lang vi --tgt_lang en \
+  --ws_port 8765 --log print
 ```
 
-**Example - English to Vietnamese:**
+English → Vietnamese:
 ```bash
 live-translate-server \
-  --asr_backend whisper \
-  --whisper_model base \
+  --asr_backend phowhisper \
+  --whisper_model vinai/PhoWhisper-small \
   --nmt_backend vinai \
   --trans_model vinai/vinai-translate-en2vi-v2 \
-  --src_lang en \
-  --tgt_lang vi
+  --src_lang en --tgt_lang vi \
+  --ws_port 8766 --log print
 ```
 
-### Vietnamese Python API Example
+> **NOTE**: The first run downloads models into the cache folder (e.g. `~/.cache`). That output can scatter
+> the initial server logs — rerun once downloads finish for a clean view.
 
+### 2. Serve the web client
+
+```bash
+cd medical-translation-webapp
+python3 -m http.server 8080
+```
+
+Open <http://localhost:8080>. Microphone access needs a secure context — `localhost` counts, anything
+else needs HTTPS.
+
+Full client documentation: [`medical-translation-webapp/README.md`](./medical-translation-webapp/README.md).
+
+---
+
+## 🔧 Server usage
+
+### CLI
+
+```bash
+live-translate-server [OPTIONS]
+```
+
+| Option | Values | Default | Notes |
+|---|---|---|---|
+| `--asr_backend` | `whisper`, `phowhisper` | `whisper` | `phowhisper` for Vietnamese |
+| `--whisper_model` | Whisper sizes, or `vinai/PhoWhisper-{small,large}` | `base` | must match the backend |
+| `--nmt_backend` | `marian`, `vinai` | `marian` | `vinai` is vi⇄en only |
+| `--trans_model` | `Helsinki-NLP/opus-mt[-tc-big]`, `vinai/vinai-translate-{vi2en,en2vi}-v2` | `Helsinki-NLP/opus-mt` | for Marian, omit language codes |
+| `--src_lang` / `--tgt_lang` | e.g. `vi`, `en`, `es` | `en` / `es` | |
+| `--device` | `cpu`, `cuda` | `cpu` | GPU strongly recommended for PhoWhisper/VinAI |
+| `--codec` | `pcm`, `opus` | `opus` | must match the client |
+| `--ws_port` | port | `8765` | |
+| `--silence_threshold` | seconds (min 1.5) | `2` | silence flushes the buffer |
+| `--vad_aggressiveness` | `0`–`9` | `8` | higher = more confident before calling it speech |
+| `--max_buffer_duration` | `5`–`10` s | `7` | buffer trim point |
+| `--log` | `print`, `file` | none | `file` writes `./transcripts/transcript_{TIMESTAMP}.jsonl` |
+| `--transcribe_only` | flag | off | skip translation |
+| `--version` | flag | | print version and exit |
+
+Run `live-translate-server --help` for the authoritative list.
+
+There is also a reference CLI client and an all-in-one demo:
+```bash
+live-translate-client --server ws://localhost:8765 --codec opus
+live-translate-demo   # server + client with default config, quick smoke test only
+```
+
+> **NOTE**: On Linux, ALSA/JACK warnings when the client opens the mic (`unable to open slave`,
+> `jack server is not running`, …) are harmless.
+
+### Python API
+
+**Server** — Vietnamese → English:
 ```python
 from live_translation import LiveTranslationServer, ServerConfig
 
 def main():
-    # Vietnamese to English with PhoWhisper + VinAI Translate
     config = ServerConfig(
-        device="cpu",  # or "cuda" for GPU
+        device="cpu",  # or "cuda"
         asr_backend="phowhisper",
         whisper_model="vinai/PhoWhisper-small",
         nmt_backend="vinai",
@@ -437,171 +231,185 @@ def main():
         log="print",
         codec="opus",
     )
+    LiveTranslationServer(config).run(blocking=True)
 
-    server = LiveTranslationServer(config)
-    server.run(blocking=True)
+# The main guard is CRITICAL on platforms that spawn processes (macOS, Windows)
+if __name__ == "__main__":
+    main()
+```
+
+**Client**:
+```python
+from live_translation import LiveTranslationClient, ClientConfig
+
+def parser_callback(entry, *args, **kwargs):
+    print(f"📝 {entry['transcription']}")
+    print(f"🌍 {entry['translation']}")
+    return False  # return True to shut the client down
+
+def main():
+    config = ClientConfig(server_uri="ws://localhost:8765", codec="opus")
+    LiveTranslationClient(config).run(callback=parser_callback, blocking=True)
 
 if __name__ == "__main__":
     main()
 ```
 
-### Performance Recommendations
-
-For best Vietnamese language performance:
-
-1. **Use PhoWhisper for ASR**: Provides better Vietnamese speech recognition than standard Whisper
-2. **Use VinAI Translate for NMT**: Offers superior translation quality for Vietnamese⇄English pairs
-3. **GPU recommended**: Both PhoWhisper and VinAI models benefit from GPU acceleration (`--device cuda`)
-4. **Model sizes**:
-   - For development/testing: `vinai/PhoWhisper-small`
-   - For production: `vinai/PhoWhisper-large` (requires more GPU memory)
+Non-blocking and asynchronous workflows are shown in [`./examples/`](./examples).
 
 ---
 
-## 🤝 Development & Contribution
+## 🔌 WebSocket protocol
 
-To contribute or modify this project, these steps might be helpful:
-> **NOTE**: This workflow below is developed with Linux-based systems with typical build tools installed e.g. ***Make*** in mind. One might need to install ***Make*** and possibly other tools on other systems. However, one can still do things manually without ***Make***, for example, run test manually using `python -m pytest -s tests/` instead of `make test`. 
-> See **Makefile** for more details.
->
+To write your own client, talk to the server directly.
 
-**Fork & Clone** the repository:
-```bash
-git clone git@github.com:<your-username>/live-translation.git
-cd live-translation
+**Send** Opus-encoded audio (or raw PCM with `--codec pcm`):
+- 16-bit signed integer (`int16`), 16,000 Hz, mono
+- 640 samples = 1280 bytes per message (40 ms), sent as soon as each chunk is encoded
+
+**Receive** JSON:
+```json
+{
+  "timestamp": "2025-05-25T12:58:35.259085+00:00",
+  "transcription": "Chào buổi sáng, anh thấy trong người thế nào?",
+  "translation": "Good morning, how are you feeling?"
+}
 ```
 
-**Ceate** a virtual environment:
-```bash
-python -m venv .venv
-source .venv/bin/activate 
-```
+Working reference clients in [`./examples/clients`](./examples/clients): **Node.js**, **Browser JS**, **Go**,
+**C#**, **Kotlin/Android**. The [Python client](./live_translation/client/client.py) is the guide for
+anything more involved. The MedComms webapp is the production browser implementation.
 
-**Install** the package and its dependencies in ***editable mode***:
+---
+
+## ☁️ Deployment
+
+- **[`AMPLIFY_SETUP.md`](./AMPLIFY_SETUP.md)** — hosting the MedComms client on AWS Amplify.
+  `amplify.yml` runs `build-config.sh`, which injects `BACKEND_URL` into
+  `medical-translation-webapp/config.env.js`, and serves that directory as the site root.
+- **[`AWS_DEPLOYMENT_GUIDE.md`](./AWS_DEPLOYMENT_GUIDE.md)** — running the translation servers on EC2:
+  systemd units for both directions, NGINX reverse proxy for the WebSockets, Let's Encrypt TLS.
+
+Serve the client over HTTPS and the WebSockets over `wss://` — an HTTPS page cannot open an insecure
+`ws://` connection, and the microphone requires a secure context.
+
+---
+
+## 🧪 Performance notes
+
+For Vietnamese work:
+1. **PhoWhisper for ASR** — clearly better Vietnamese recognition than stock Whisper.
+2. **VinAI Translate for NMT** — best-in-class for vi⇄en.
+3. **GPU recommended** (`--device cuda`); both model families benefit substantially.
+4. Model size: `vinai/PhoWhisper-small` for development, `vinai/PhoWhisper-large` for production
+   (needs more GPU memory).
+
+Reference environment used during development of the upstream engine: Ubuntu 24.10, Python 3.12.7,
+Intel i9-13900HX, RTX 4070 Mobile, CUDA 12.1 / cuDNN 9.7.1, 32 GB RAM. CUDA is effectively required
+for the heavier models — see [NVIDIA drivers](https://www.nvidia.com/drivers/),
+[CUDA Toolkit](https://developer.nvidia.com/cuda-downloads), [cuDNN](https://developer.nvidia.com/cudnn-downloads).
+
+---
+
+## 🤝 Development
+
 ```bash
+python -m venv .venv && source .venv/bin/activate
 pip install --upgrade pip
-pip install -e .[dev,examples]  # Install with optional examples dependencies
-```
-This is **equivalent** to:
-```bash
-make install
-```
+pip install -e .[dev,examples]   # == make install
 
-**Test** the package:
-```bash
-make test
+make test     # pytest
+make build    # lint + format check (ruff) + wheel
+make help     # everything else
 ```
 
-**Build** the package:
-```bash
-make build
-```
-> **NOTE**: Building does ***lint*** and checks for ***formatting*** using [ruff](https://docs.astral.sh/ruff/). One can do that seprately using `make format` and `make lint`. For linting and formatting rules, see the [ruff config](https://github.com/AbdullahHendy/live-translation/blob/main/ruff.toml).
+Editable install means CLI changes take effect immediately — no reinstall between runs.
 
-> **NOTE**: Building generates a ***.whl*** file that can be ***pip*** installed in a new environment for testing
-
-**Check** more available ***make*** commands
-```bash
-make help
-```
-
-**For quick testing**, run the server and the client within the virtual environment:
-```bash
-live-translate-server [OPTIONS]
-live-translate-client [OPTIONS]
-```
-> **NOTE**: Since the package was installed in editable mode, any changes will be reflected when the cli tools are run
-
-**For contribution**:
-- Make your changes in a feature branch
-- Ensure all tests pass
-- Open a Pull Request (PR) with a clear description of your changes
+For changes: work in a feature branch, keep tests passing, and open a PR describing what changed.
+For the webapp, also test both language directions end to end and check a phone-sized viewport.
 
 ---
 
-## 🌱 Tested Environments
+## 📈 Roadmap
 
-This project was tested and developed on the following system configuration:
-
-- **Architecture**: x86_64 (64-bit)
-- **Operating System**: Ubuntu 24.10 (Oracular Oriole)
-- **Kernel Version**: 6.11.0-18-generic
-- **Python Version**: 3.12.7
-- **Processor**: 13th Gen Intel(R) Core(TM) i9-13900HX
-- **GPU**: GeForce RTX 4070 Max-Q / Mobile [^1]
-- **NVIDIA Driver Version**: 560.35.03  
-- **CUDA Toolkit Version**: 12.1  
-- **cuDNN Version**: 9.7.1
-- **RAM**: 32GB DDR5
-- **Dependencies**: All required dependencies are listed in `pyproject.toml` and [Prerequisites](#-prerequisites)
-
-[^1]: CUDA as the `DEVICE` is probably needed for heavier models like `large-v3-turbo` for Whisper. [**Nvidia drivers**](https://www.nvidia.com/drivers/), [**CUDA Toolkit**](https://developer.nvidia.com/cuda-downloads), [**cuDNN**](https://developer.nvidia.com/cudnn-downloads) installation needed if option `"cuda"` was to be used.
+- **Medical terminology tuning** — domain adaptation / glossary enforcement for clinical vocabulary
+- **Text input mode** — the client UI exists but is hidden pending a server-side text-only endpoint
+- **ARM64 support**
+- **Concurrency review** — revisit `WebSocketIO` as a thread while `AudioProcessor`, `Transcriber`, and
+  `Translator` are processes; audit for races and deadlocks
+- **Structured logging** — a real logging framework with activity, error, and performance metrics
+- **Resource profiling** — document CPU/GPU/memory per component to ground hardware sizing
+- **Handshake protocol** — server advertises capabilities and negotiates with the client instead of
+  duplicating options (e.g. `--codec`) on both sides
+- **Better Marian model selection** — automatically pick top-performing OpusMT models for a given
+  `src_lang`/`tgt_lang` pair
 
 ---
 
-## 📈 Improvements
+## 📄 License & credits
 
-- **ARM64 Support**: Ensure support for ARM64 based systems.
-- **Concurrency Design Check**: Review and optimize the threading design to ensure thread safety and prevent issues like race conditions or deadlocks, etc., revisit the current design of ***WebSocketIO*** being a thread while ***AudioProcessor***, ***Transcriber***, and ***Translator*** being processes.
-- **Logging**: Integrate detailed logging to track system activity, errors, and performance metrics using a more formal logging framework.
-- **Translation Models**: Some of the models downloaded in ***Translator*** from [OpusMT's Hugging Face](https://huggingface.co/Helsinki-NLP) are not the best performing when compared with top models in [Opus-MT's Leaderboard](https://opus.nlpl.eu/dashboard/). Find a way to automatically download best performing models using the user's input of `src_lang` and `tgt_lang` as it's currently done. 
-- **System Profiling & Resource Guidelines**: Benchmark and document CPU, memory, and GPU usage across all multiprocessing components. For example, "~35% CPU usage on 24-core **Intel i9-13900HX**", or "GPU load ~20% on **Nvidia RTX 4070** with `large-v3-turbo` Whisper model"). This will help with hardware requirements and deployment decisions.
-- **Proper Handshake Protocol**: Instead of duplicate server and clinet options (e.g. --codec), establish a handshake protocol where, for example, server advertises its capabilities and negotiate with client over what options to use.
+MIT — see [`LICENSE`](./LICENSE).
+
+Built on [live-translation](https://github.com/AbdullahHendy/live-translation) by Abdullah Hendy.
+
+© 2025 College of Engineering and Computer Science & College of Health Sciences, VinUniversity.
+
 ---
 
 ## 📚 Citations
- ```bibtex
-  @article{Whisper,
-    title = {Robust Speech Recognition via Large-Scale Weak Supervision},
-    url = {https://arxiv.org/abs/2212.04356},
-    author = {Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya},
-    publisher = {arXiv},
-    year = {2022}
-  }
 
-  @misc{PhoWhisper,
-    title={PhoWhisper: Automatic Speech Recognition for Vietnamese},
-    author={VinAI Research},
-    year={2023},
-    publisher={Hugging Face},
-    howpublished={\url{https://huggingface.co/vinai/PhoWhisper-small}}
-  }
+```bibtex
+@article{Whisper,
+  title = {Robust Speech Recognition via Large-Scale Weak Supervision},
+  url = {https://arxiv.org/abs/2212.04356},
+  author = {Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya},
+  publisher = {arXiv},
+  year = {2022}
+}
 
-  @misc{VinAITranslate,
-    title={High-Quality Vietnamese-English Neural Machine Translation},
-    author={VinAI Research},
-    year={2023},
-    publisher={Hugging Face},
-    howpublished={\url{https://huggingface.co/vinai/vinai-translate-vi2en-v2}}
-  }
+@misc{PhoWhisper,
+  title = {PhoWhisper: Automatic Speech Recognition for Vietnamese},
+  author = {VinAI Research},
+  year = {2023},
+  publisher = {Hugging Face},
+  howpublished = {\url{https://huggingface.co/vinai/PhoWhisper-small}}
+}
 
-  @misc{Silero VAD,
-    author = {Silero Team},
-    title = {Silero VAD: pre-trained enterprise-grade Voice Activity Detector (VAD), Number Detector and Language Classifier},
-    year = {2021},
-    publisher = {GitHub},
-    journal = {GitHub repository},
-    howpublished = {\url{https://github.com/snakers4/silero-vad}},
-    email = {hello@silero.ai}
-  }
+@misc{VinAITranslate,
+  title = {High-Quality Vietnamese-English Neural Machine Translation},
+  author = {VinAI Research},
+  year = {2023},
+  publisher = {Hugging Face},
+  howpublished = {\url{https://huggingface.co/vinai/vinai-translate-vi2en-v2}}
+}
 
-  @article{tiedemann2023democratizing,
-    title={Democratizing neural machine translation with {OPUS-MT}},
-    author={Tiedemann, J{\"o}rg and Aulamo, Mikko and Bakshandaeva, Daria and Boggia, Michele and Gr{\"o}nroos, Stig-Arne and Nieminen, Tommi and Raganato, Alessandro and Scherrer, Yves and Vazquez, Raul and Virpioja, Sami},
-    journal={Language Resources and Evaluation},
-    number={58},
-    pages={713--755},
-    year={2023},
-    publisher={Springer Nature},
-    issn={1574-0218},
-    doi={10.1007/s10579-023-09704-w}
-  }
+@misc{SileroVAD,
+  author = {Silero Team},
+  title = {Silero VAD: pre-trained enterprise-grade Voice Activity Detector (VAD), Number Detector and Language Classifier},
+  year = {2021},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/snakers4/silero-vad}},
+  email = {hello@silero.ai}
+}
 
-  @InProceedings{TiedemannThottingal:EAMT2020,
-    author = {J{\"o}rg Tiedemann and Santhosh Thottingal},
-    title = {{OPUS-MT} — {B}uilding open translation services for the {W}orld},
-    booktitle = {Proceedings of the 22nd Annual Conference of the European Association for Machine Translation (EAMT)},
-    year = {2020},
-    address = {Lisbon, Portugal}
-  }
+@article{tiedemann2023democratizing,
+  title = {Democratizing neural machine translation with {OPUS-MT}},
+  author = {Tiedemann, J{\"o}rg and Aulamo, Mikko and Bakshandaeva, Daria and Boggia, Michele and Gr{\"o}nroos, Stig-Arne and Nieminen, Tommi and Raganato, Alessandro and Scherrer, Yves and Vazquez, Raul and Virpioja, Sami},
+  journal = {Language Resources and Evaluation},
+  number = {58},
+  pages = {713--755},
+  year = {2023},
+  publisher = {Springer Nature},
+  issn = {1574-0218},
+  doi = {10.1007/s10579-023-09704-w}
+}
+
+@InProceedings{TiedemannThottingal:EAMT2020,
+  author = {J{\"o}rg Tiedemann and Santhosh Thottingal},
+  title = {{OPUS-MT} — {B}uilding open translation services for the {W}orld},
+  booktitle = {Proceedings of the 22nd Annual Conference of the European Association for Machine Translation (EAMT)},
+  year = {2020},
+  address = {Lisbon, Portugal}
+}
 ```

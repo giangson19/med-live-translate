@@ -1,52 +1,70 @@
-# 🏥 Medical Translation Web Application
+# 🏥 MedComms
 
-A modern, responsive web application for real-time Vietnamese ↔ English medical speech translation.
+**Vietnamese–English Medical Speech Translation**
 
-## ✨ Features
+MedComms is a lightweight, dependency-free web client for real-time Vietnamese ↔ English
+medical speech translation. A clinician speaks, and the transcription and translation appear
+side by side as the words come out — no install, no build step, just a browser and a microphone.
 
-### Language Support
-- **Bidirectional Translation**: Vietnamese → English and English → Vietnamese
-- **One-Click Language Swap**: Easily toggle between source and target languages
-- **Default**: Vietnamese → English
+Built by the College of Engineering and Computer Science & the College of Health Sciences,
+VinUniversity, as the front end for the [live-translation](../README.md) server.
 
-### Two Input Modes
+## ✨ What it does
 
-#### 1. 📱 Record Audio (Live Translation)
-- Real-time speech-to-text transcription
-- Live translation as you speak
-- Uses WebSocket streaming for low latency
-- Opus codec for efficient audio transmission
+### Live speech translation
+- **Bidirectional**: Vietnamese → English and English → Vietnamese (default: Vietnamese → English)
+- **Streaming**: audio is Opus-encoded in the browser and streamed over WebSocket, so partial
+  transcriptions and translations arrive while the speaker is still talking
+- **One-click swap**: the ⇄ button flips source and target languages
 
-#### 2. ✍️ Text Input
-- Direct text translation
-- Character counter (max 5000 characters)
-- Medical terminology optimized
-- Real-time validation
+### Interface
+- **Two-panel layout**: source (📝) and translation (🌍) side by side, each with its own
+  language selector and copy-to-clipboard button
+- **Dialogue history**: completed utterances are collected below the panels so a whole
+  consultation stays on screen; clear it with one button
+- **Connection log**: a collapsible panel showing WebSocket and encoder events, for debugging
+- **Responsive**: works on desktop, tablet, and phone
+- **Clean medical theme**: high-contrast, distraction-free, designed for use at the bedside
 
-### User Interface
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
-- **Visual States**: Clear indicators for idle, connecting, recording, processing, complete, and error states
-- **Two-Panel Layout**: Side-by-side source and translation display
-- **Copy to Clipboard**: One-click copy buttons for both transcription and translation
-- **Connection Log**: Collapsible log panel for debugging and monitoring
-- **Medical Theme**: Clean, professional design optimized for medical use
+> **Text input mode** exists in the markup but is hidden pending a server-side text-only
+> translation endpoint. The `#text-action-btn` button in `index.html` can be unhidden once
+> that endpoint lands.
 
-## 🚀 Quick Start
+## 🧱 How it is built
+
+No framework, no bundler, no `node_modules` — the app is plain ES modules plus a WASM codec:
+
+```
+medical-translation-webapp/
+├── index.html              # Markup and layout
+├── app.js                  # All application logic (state, WebSocket, audio, UI)
+├── styles.css              # Responsive styling and theme tokens
+├── worklet-processor.js    # AudioWorklet that captures raw PCM frames
+├── config.env.js           # Backend URL, generated at build time (see Configuration)
+├── libopus.wasm            # Opus codec WASM binary
+├── libopus.wasm.js         # Opus codec JS wrapper
+├── AWS_DEPLOYMENT_GUIDE.md # Production deployment on AWS
+└── README.md               # This file
+```
+
+Audio path: `getUserMedia` → `AudioWorklet` (16 kHz mono, 640-sample / 40 ms frames) →
+`libopus` encoder (30 kbps, VoIP profile) → WebSocket → translation server.
+
+## 🚀 Quick start
 
 ### Prerequisites
 
-1. **Translation Server Running**: You need the live-translation server running on two ports:
-   - Port 8765: Vietnamese → English
-   - Port 8766: English → Vietnamese
+1. **Two translation servers running**, one per direction:
+   - port `8765`: Vietnamese → English
+   - port `8766`: English → Vietnamese
 
-2. **HTTPS (for microphone access)**: Modern browsers require HTTPS for microphone access. For local development, you can use:
-   - `localhost` (Chrome/Edge allow mic access on localhost over HTTP)
-   - HTTPS with self-signed certificate
-   - HTTPS reverse proxy (nginx)
+2. **A secure context for microphone access**. Browsers only grant the mic over HTTPS,
+   with `localhost` as the exception — so local development over plain HTTP is fine.
 
-### Setup Translation Servers
+### Start the translation servers
 
-#### Start Vietnamese → English Server
+Vietnamese → English:
+
 ```bash
 live-translate-server \
   --asr_backend phowhisper \
@@ -58,7 +76,8 @@ live-translate-server \
   --ws_port 8765
 ```
 
-#### Start English → Vietnamese Server
+English → Vietnamese:
+
 ```bash
 live-translate-server \
   --asr_backend phowhisper \
@@ -70,83 +89,71 @@ live-translate-server \
   --ws_port 8766
 ```
 
-### Run the Web Application
+### Serve the web app
 
-#### Option 1: Python HTTP Server (Simplest)
+Any static file server works — the app must be served over HTTP(S), not opened as a `file://` URL,
+because it loads ES modules and a WASM binary.
+
 ```bash
 cd medical-translation-webapp
-python3 -m http.server 8080
+python3 -m http.server 8080      # or: npx http-server -p 8080
 ```
 
-Then open: `http://localhost:8080`
+Then open <http://localhost:8080>.
 
-#### Option 2: Node.js HTTP Server
-```bash
-cd medical-translation-webapp
-npx http-server -p 8080
-```
+## 📖 Usage
 
-Then open: `http://localhost:8080`
+1. **Pick a direction** with the source/target dropdowns, or hit ⇄ to swap.
+2. **Click "Record Audio"**, then **"Start Recording"**.
+3. **Grant microphone access** when the browser asks.
+4. **Speak.** Transcription fills the left panel, translation the right, updating live.
+5. **Click "Stop Recording"** when the turn is over — the completed exchange moves into
+   Dialogue History.
+6. **Copy** either panel with its clipboard button, or **Clear** the history when done.
 
-#### Option 3: VS Code Live Server
-1. Install "Live Server" extension in VS Code
-2. Right-click `index.html`
-3. Select "Open with Live Server"
-
-## 📖 Usage Guide
-
-### 1. Record Audio Mode
-
-1. **Select Language Direction**: Click on the language selector to choose Vietnamese → English or English → Vietnamese
-2. **Start Recording**: Click the "Start Recording" button
-3. **Allow Microphone Access**: Grant permission when browser prompts
-4. **Speak**: Start speaking in the source language
-5. **View Results**: Transcription and translation appear in real-time
-6. **Stop Recording**: Click "Stop Recording" when done
-7. **Copy Results**: Use copy buttons to save transcription or translation
-
-### 2. Text Input Mode
-
-1. **Select Language Direction**: Choose your translation direction
-2. **Enter Text**: Type or paste medical text (max 5000 characters)
-3. **Translate**: Click "Translate Text" button
-4. **View Results**: Translation appears in the target panel
-5. **Copy Results**: Use copy buttons to save results
+If something looks wrong, expand **Connection Log** at the bottom to see what the client saw.
 
 ## 🔧 Configuration
 
-### WebSocket Server Ports
+### Backend URL
 
-Edit `app.js` to change server ports:
+The WebSocket host comes from `window.ENV_CONFIG`, defined in `config.env.js`:
 
 ```javascript
-const CONFIG = {
-    WS_BASE_URL: 'ws://localhost',
-    PORTS: {
-        'vi-en': 8765,  // Vietnamese to English
-        'en-vi': 8766   // English to Vietnamese
-    },
-    // ... other settings
+window.ENV_CONFIG = {
+    BACKEND_URL: 'ws://localhost',
+    NODE_ENV: 'development'
 };
 ```
 
-### Audio Settings
+For deployments this file is **generated**, not edited: `build-config.sh` in the repository root
+writes it from the `BACKEND_URL` and `NODE_ENV` environment variables during the build. Edit it
+directly only for local development.
+
+### Ports and audio settings
+
+Both directions are mapped to ports in `app.js`:
 
 ```javascript
 const CONFIG = {
-    SAMPLE_RATE: 16000,      // Audio sample rate (Hz)
-    CHANNELS: 1,             // Mono audio
-    CHUNK_SIZE: 640,         // Samples per chunk
-    OPUS_BITRATE: 30000,     // Opus encoding bitrate
+    WS_BASE_URL: window.ENV_CONFIG?.BACKEND_URL || 'ws://localhost',
+    PORTS: {
+        'vi-en': 8765,       // Vietnamese to English
+        'en-vi': 8766        // English to Vietnamese
+    },
+    SAMPLE_RATE: 16000,      // Hz
+    CHANNELS: 1,             // Mono
+    CHUNK_SIZE: 640,         // Samples per chunk (40 ms)
+    CHUNK_SIZE_MS: 40,
+    OPUS_BITRATE: 30000,     // bits/s
+    APPLICATION_VOIP: true,  // Opus VoIP profile
     MAX_TEXT_LENGTH: 5000    // Max characters for text input
 };
 ```
 
-## 🎨 Customization
+### Theme
 
-### Theme Colors
-
-Edit `styles.css` to customize colors:
+Colors live as custom properties at the top of `styles.css`:
 
 ```css
 :root {
@@ -154,109 +161,42 @@ Edit `styles.css` to customize colors:
     --secondary-color: #10b981;   /* Success green */
     --accent-color: #f59e0b;      /* Warning amber */
     --error-color: #ef4444;       /* Error red */
-    /* ... more colors */
 }
 ```
 
-### Layout
-
-The application uses CSS Grid and Flexbox for responsive layout. Modify breakpoints in `styles.css`:
-
-```css
-@media (max-width: 768px) {
-    /* Tablet styles */
-}
-
-@media (max-width: 480px) {
-    /* Mobile styles */
-}
-```
-
-## 🔍 Troubleshooting
-
-### Microphone Not Working
-
-**Issue**: Browser doesn't request microphone permission or access is denied
-
-**Solutions**:
-1. **Use HTTPS**: Modern browsers require HTTPS for microphone access (localhost is exception)
-2. **Check Browser Settings**: Ensure microphone permissions are enabled for your site
-3. **Try Different Browser**: Some browsers have stricter security policies
-
-### WebSocket Connection Failed
-
-**Issue**: Cannot connect to translation server
-
-**Solutions**:
-1. **Check Server Running**: Ensure both translation servers are running on ports 8765 and 8766
-2. **Check Firewall**: Allow connections on ports 8765 and 8766
-3. **Check Server Logs**: Look for errors in server output
-4. **Verify Ports**: Make sure ports match configuration in `app.js`
-
-### Text Translation Not Working
-
-**Issue**: Text input doesn't translate
-
-**Solutions**:
-1. **Character Limit**: Ensure text is under 5000 characters
-2. **Server Endpoint**: Current implementation requires server-side text-only endpoint (see Note below)
-
-**Note**: The current text translation mode is a placeholder. For production use, implement a dedicated text-only translation endpoint on the server side.
-
-## 📱 Browser Compatibility
-
-### Supported Browsers
-
-- ✅ Chrome/Edge 88+ (recommended)
-- ✅ Firefox 85+
-- ✅ Safari 14.1+
-- ✅ Opera 74+
-
-### Required Browser Features
-
-- WebSocket API
-- Web Audio API
-- AudioWorklet
-- MediaRecorder API
-- ES6+ JavaScript
-- CSS Grid and Flexbox
+Layout uses CSS Grid and Flexbox, with breakpoints at `768px` (tablet) and `480px` (mobile).
 
 ## 🚀 Deployment
 
-### Local Development
+Two supported paths, both documented in detail elsewhere in the repo:
 
-See [Quick Start](#-quick-start) section above.
+- **AWS Amplify** (static hosting for the client): driven by `amplify.yml` at the repository
+  root, which runs `build-config.sh` and serves `medical-translation-webapp/` as the site root.
+  Set `BACKEND_URL` (e.g. `wss://api.yourdomain.com`) as an Amplify environment variable.
+  See [`AMPLIFY_SETUP.md`](../AMPLIFY_SETUP.md).
+- **EC2 + NGINX** (client and servers on one host): see
+  [`AWS_DEPLOYMENT_GUIDE.md`](./AWS_DEPLOYMENT_GUIDE.md) for the full walkthrough — systemd
+  units for both translation servers, NGINX reverse proxy, and Let's Encrypt TLS.
 
-### Production Deployment (EC2)
+Whichever path you take, serve the app over HTTPS and the WebSocket over `wss://` — a page
+loaded over HTTPS cannot open an insecure `ws://` connection, and the microphone requires a
+secure context.
 
-1. **Setup Servers**: Follow the deployment plan in `.claude/plans/tidy-seeking-pearl.md`
-
-2. **Configure NGINX**: Setup reverse proxy for WebSocket and HTTPS
-
-3. **SSL Certificate**: Use Let's Encrypt for free SSL certificates
-
-4. **Systemd Services**: Create services for both translation servers
-
-5. **Update Configuration**: Change `WS_BASE_URL` in `app.js` to your domain
-
-Example NGINX configuration:
+Minimal NGINX sketch:
 
 ```nginx
 server {
     listen 443 ssl;
     server_name yourdomain.com;
 
-    # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
 
-    # Serve web app
     location / {
         root /var/www/medical-translation-webapp;
         index index.html;
     }
 
-    # WebSocket for vi→en (port 8765)
     location /vi-to-en {
         proxy_pass http://localhost:8765;
         proxy_http_version 1.1;
@@ -265,7 +205,6 @@ server {
         proxy_read_timeout 3600s;
     }
 
-    # WebSocket for en→vi (port 8766)
     location /en-to-vi {
         proxy_pass http://localhost:8766;
         proxy_http_version 1.1;
@@ -276,46 +215,50 @@ server {
 }
 ```
 
-## 📁 Project Structure
+## 🔍 Troubleshooting
 
-```
-medical-translation-webapp/
-├── index.html              # Main HTML structure
-├── app.js                  # Application logic
-├── styles.css              # Responsive styling
-├── worklet-processor.js    # Audio worklet processor
-├── libopus.wasm           # Opus codec WASM binary
-├── libopus.wasm.js        # Opus codec JavaScript wrapper
-└── README.md              # This file
-```
+**Microphone never prompts, or access is denied**
+Serve over HTTPS (or use `localhost`), check the site's mic permission in browser settings,
+and try Chrome/Edge if another browser is being strict.
+
+**WebSocket connection failed**
+Confirm both servers are listening on `8765` and `8766`, that the firewall allows them, that
+`BACKEND_URL` matches the scheme the page is served with (`wss://` on HTTPS), and check the
+server logs. The Connection Log panel shows the exact URL the client tried.
+
+**No transcription appears while recording**
+The Opus encoder logs `✅ Opus encoder initialized` in the browser console once `libopus.wasm`
+loads — if that line is missing, the WASM binary was not served correctly (check the path and
+its MIME type).
+
+**Text translation does nothing**
+Expected — that mode is hidden and awaiting a server-side text-only endpoint.
+
+## 📱 Browser support
+
+Chrome/Edge 88+ (recommended), Firefox 85+, Safari 14.1+, Opera 74+.
+
+Requires: WebSocket API, Web Audio API, AudioWorklet, WebAssembly, ES modules, CSS Grid.
 
 ## 🤝 Contributing
 
-This application is part of the live-translation project. For contributions:
+This app is part of the live-translation project. Before opening a PR:
 
-1. Test thoroughly with both language directions
-2. Ensure responsive design works on mobile
-3. Verify both input modes function correctly
-4. Update documentation for any configuration changes
-
-## 📄 License
-
-Same license as the parent live-translation project.
+1. Test both language directions end to end against live servers.
+2. Check the layout on a phone-sized viewport.
+3. Update this README for any change to configuration or deployment.
 
 ## 🙏 Acknowledgments
 
-- **VinAI Research**: PhoWhisper and VinAI Translate models
-- **OpenAI**: Whisper ASR model
-- **libopus.wasm**: Opus audio codec for WebAssembly
-- **live-translation**: Backend translation server
+- **VinAI Research** — PhoWhisper and VinAI Translate models
+- **OpenAI** — Whisper ASR
+- **libopus.wasm** — Opus codec for WebAssembly
+- **live-translation** — the backend translation server
 
-## 📞 Support
+## 📄 License
 
-For issues or questions:
-1. Check the [Troubleshooting](#-troubleshooting) section
-2. Review server logs for errors
-3. Consult the main live-translation repository documentation
+Same license as the parent live-translation project. See [`LICENSE`](../LICENSE).
 
 ---
 
-**Last Updated**: 2025-12-14
+© 2025 College of Engineering and Computer Science & College of Health Sciences, VinUniversity
