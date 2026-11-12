@@ -4,8 +4,8 @@ import numpy as np
 import multiprocessing as mp
 import time
 import torchaudio
-from live_translation._transcription._transcriber import Transcriber
-from live_translation.server.config import Config
+from med_live_translate._transcription._transcriber import Transcriber
+from med_live_translate.server.config import Config
 
 
 @pytest.fixture
@@ -187,7 +187,7 @@ def test_transcriber_critical_error(capfd):
     # Inject failure right at the beginning of run() (WhisperModel initialization)
     with (
         mock.patch(  # patch the WhisperModel initialization to raise an error
-            "live_translation._transcription._transcriber.WhisperModel",
+            "med_live_translate._transcription._transcriber.WhisperModel",
             side_effect=RuntimeError("load fail"),
         ),
         mock.patch.object(transcriber, "_cleanup"),

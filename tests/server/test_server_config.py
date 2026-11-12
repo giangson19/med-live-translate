@@ -1,6 +1,6 @@
 from unittest import mock
 import pytest
-from live_translation.server.config import Config
+from med_live_translate.server.config import Config
 
 
 @pytest.fixture
@@ -118,7 +118,7 @@ def test_config_transcribe_only_skips_model_check():
 
 def test_general_exception():
     with mock.patch(
-        "live_translation.server.config.hf_hub.model_info"
+        "med_live_translate.server.config.hf_hub.model_info"
     ) as mock_model_info:
         mock_model_info.side_effect = Exception("network timeout")
 

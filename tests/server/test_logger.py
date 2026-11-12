@@ -1,7 +1,7 @@
 import os
 import json
-from live_translation.server._logger import OutputLogger
-from live_translation.server.config import Config
+from med_live_translate.server._logger import OutputLogger
+from med_live_translate.server.config import Config
 
 
 def test_logger_print(capsys):

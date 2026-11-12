@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 import wave
-from live_translation._audio._codec import OpusCodec
-from live_translation.server.config import Config
+from med_live_translate._audio._codec import OpusCodec
+from med_live_translate.server.config import Config
 
 
 @pytest.fixture

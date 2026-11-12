@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
-from live_translation.client.client import LiveTranslationClient
-from live_translation.client.config import Config
+from med_live_translate.client.client import LiveTranslationClient
+from med_live_translate.client.config import Config
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ async def test_receive_output_callback_exit(config):
 @pytest.mark.asyncio
 async def test_receive_output_callback_with_args_kwargs():
     """Test that args and kwargs are passed to the callback and stop is triggered."""
-    from live_translation.client.config import Config
+    from med_live_translate.client.config import Config
 
     config = Config(server_uri="ws://fake-uri")
 
@@ -155,7 +155,7 @@ async def test_send_audio_opus_encoding():
 
     # Patch OpusCodec and PyAudio before instantiation
     with (
-        patch("live_translation.client.client.OpusCodec", return_value=mock_codec),
+        patch("med_live_translate.client.client.OpusCodec", return_value=mock_codec),
         patch("pyaudio.PyAudio", return_value=mock_pa),
     ):
         cfg = Config(server_uri="ws://localhost:8765", codec="opus")
@@ -193,7 +193,7 @@ async def test_audio_opus_encoding_exception(capfd):
 
     # Patch before client instantiation
     with (
-        patch("live_translation.client.client.OpusCodec", return_value=mock_codec),
+        patch("med_live_translate.client.client.OpusCodec", return_value=mock_codec),
         patch("pyaudio.PyAudio", return_value=mock_pa),
     ):
         cfg = Config(server_uri="ws://localhost:8765", codec="opus")

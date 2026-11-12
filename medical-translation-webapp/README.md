@@ -7,7 +7,7 @@ medical speech translation. A clinician speaks, and the transcription and transl
 side by side as the words come out — no install, no build step, just a browser and a microphone.
 
 Built by the College of Engineering and Computer Science & the College of Health Sciences,
-VinUniversity, as the front end for the [live-translation](../README.md) server.
+VinUniversity, as the front end for the [MedComms translation server](../README.md).
 
 ## ✨ What it does
 
@@ -66,7 +66,7 @@ Audio path: `getUserMedia` → `AudioWorklet` (16 kHz mono, 640-sample / 40 ms f
 Vietnamese → English:
 
 ```bash
-live-translate-server \
+med-live-translate-server \
   --asr_backend phowhisper \
   --whisper_model vinai/PhoWhisper-small \
   --nmt_backend vinai \
@@ -79,9 +79,9 @@ live-translate-server \
 English → Vietnamese:
 
 ```bash
-live-translate-server \
-  --asr_backend phowhisper \
-  --whisper_model vinai/PhoWhisper-small \
+med-live-translate-server \
+  --asr_backend whisper \
+  --whisper_model small \
   --nmt_backend vinai \
   --trans_model vinai/vinai-translate-en2vi-v2 \
   --src_lang en \
@@ -242,7 +242,7 @@ Requires: WebSocket API, Web Audio API, AudioWorklet, WebAssembly, ES modules, C
 
 ## 🤝 Contributing
 
-This app is part of the live-translation project. Before opening a PR:
+This app is part of the MedComms (`med-live-translate`) project. Before opening a PR:
 
 1. Test both language directions end to end against live servers.
 2. Check the layout on a phone-sized viewport.
@@ -253,11 +253,11 @@ This app is part of the live-translation project. Before opening a PR:
 - **VinAI Research** — PhoWhisper and VinAI Translate models
 - **OpenAI** — Whisper ASR
 - **libopus.wasm** — Opus codec for WebAssembly
-- **live-translation** — the backend translation server
+- **[live-translation](https://github.com/AbdullahHendy/live-translation)** by Abdullah Hendy — the upstream translation engine
 
 ## 📄 License
 
-Same license as the parent live-translation project. See [`LICENSE`](../LICENSE).
+MIT, same as the rest of this repository. See [`LICENSE`](../LICENSE).
 
 ---
 

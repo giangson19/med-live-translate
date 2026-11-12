@@ -4,8 +4,8 @@ import numpy as np
 import wave
 import multiprocessing as mp
 import time
-from live_translation._audio._processor import AudioProcessor
-from live_translation.server.config import Config
+from med_live_translate._audio._processor import AudioProcessor
+from med_live_translate.server.config import Config
 
 
 @pytest.fixture

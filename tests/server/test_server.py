@@ -1,6 +1,6 @@
 from unittest import mock
-from live_translation.server.server import LiveTranslationServer
-from live_translation.server.config import Config
+from med_live_translate.server.server import LiveTranslationServer
+from med_live_translate.server.config import Config
 
 
 def test_server_initialization():
@@ -11,7 +11,7 @@ def test_server_initialization():
 
 @mock.patch("torch.cuda.is_available", return_value=True)
 @mock.patch("multiprocessing.set_start_method")
-@mock.patch("live_translation.server.server.PipelineManager")
+@mock.patch("med_live_translate.server.server.PipelineManager")
 def test_server_set_spawn_on_cuda(
     MockPipelineManager, mock_set_start_method, mock_cuda_available
 ):
@@ -23,7 +23,7 @@ def test_server_set_spawn_on_cuda(
     assert isinstance(server, LiveTranslationServer)
 
 
-@mock.patch("live_translation.server.server.PipelineManager")
+@mock.patch("med_live_translate.server.server.PipelineManager")
 def test_server_run_blocking(MockPipelineManager):
     cfg = Config()
     server = LiveTranslationServer(cfg)
@@ -33,7 +33,7 @@ def test_server_run_blocking(MockPipelineManager):
     MockPipelineManager.return_value.run.assert_called_once()
 
 
-@mock.patch("live_translation.server.server.PipelineManager")
+@mock.patch("med_live_translate.server.server.PipelineManager")
 def test_server_run_non_blocking(MockPipelineManager):
     cfg = Config()
     server = LiveTranslationServer(cfg)
@@ -43,7 +43,7 @@ def test_server_run_non_blocking(MockPipelineManager):
     MockPipelineManager.return_value.run_async.assert_called_once()
 
 
-@mock.patch("live_translation.server.server.PipelineManager")
+@mock.patch("med_live_translate.server.server.PipelineManager")
 def test_server_stop(MockPipelineManager):
     cfg = Config()
     server = LiveTranslationServer(cfg)
