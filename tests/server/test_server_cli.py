@@ -2,15 +2,15 @@
 
 import pytest
 from unittest import mock
-from live_translation.server import cli
-from live_translation import __version__ as package_version
+from med_live_translate.server import cli
+from med_live_translate import __version__ as package_version
 
 
 def test_server_cli_prints_version(monkeypatch, capsys):
     monkeypatch.setattr("sys.argv", ["server", "--version"])
     cli.main()
     out, _ = capsys.readouterr()
-    assert f"live-translate-server  {package_version}" in out
+    assert f"med-live-translate-server  {package_version}" in out
 
 
 def test_server_cli_runs_with_defaults(monkeypatch):
@@ -32,7 +32,7 @@ def test_server_cli_runs_with_defaults(monkeypatch):
         ],
     )
 
-    with mock.patch("live_translation.server.cli.LiveTranslationServer") as MockServer:
+    with mock.patch("med_live_translate.server.cli.LiveTranslationServer") as MockServer:
         instance = MockServer.return_value
         cli.main()
         instance.run.assert_called_once()
@@ -68,7 +68,7 @@ def test_server_cli_with_all_args(monkeypatch):
         ],
     )
 
-    with mock.patch("live_translation.server.cli.LiveTranslationServer") as MockServer:
+    with mock.patch("med_live_translate.server.cli.LiveTranslationServer") as MockServer:
         instance = MockServer.return_value
         cli.main()
         instance.run.assert_called_once()

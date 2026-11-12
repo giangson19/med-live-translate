@@ -2,8 +2,8 @@ from unittest import mock
 import pytest
 import multiprocessing as mp
 import time
-from live_translation._translation._translator import Translator
-from live_translation.server.config import Config
+from med_live_translate._translation._translator import Translator
+from med_live_translate.server.config import Config
 
 
 @pytest.fixture

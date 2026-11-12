@@ -1,5 +1,5 @@
 import pytest
-from live_translation.client.config import Config
+from med_live_translate.client.config import Config
 
 
 @pytest.fixture

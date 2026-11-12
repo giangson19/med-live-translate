@@ -247,25 +247,25 @@ python3 -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}');
 # Expected: CUDA available: True, GPU: Tesla T4
 ```
 
-#### Step 1.6: Install live-translation Backend
+#### Step 1.6: Install the MedComms Backend
 
 ```bash
 # Clone repository (or upload your modified version)
 # NOTE: this fork carries the PhoWhisper/VinAI backends and the MedComms client.
 # The upstream AbdullahHendy/live-translation repo does NOT.
 cd ~
-git clone https://github.com/giangson19/med-live-translate.git live-translation
-cd live-translation
+git clone https://github.com/giangson19/med-live-translate.git
+cd med-live-translate
 
 # Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# Install live-translation
+# Install med-live-translate
 pip install -e .
 
 # Verify installation
-live-translate-server --help
+med-live-translate-server --help
 ```
 
 **If you have local modifications**, upload your code:
@@ -273,10 +273,10 @@ live-translate-server --help
 ```bash
 # Option 1: Using SCP (from your local machine, at the repo root)
 cd /path/to/med-live-translate
-scp -i ~/Downloads/medcomms-key.pem -r . ubuntu@YOUR_ELASTIC_IP:~/live-translation/
+scp -i ~/Downloads/medcomms-key.pem -r . ubuntu@YOUR_ELASTIC_IP:~/med-live-translate/
 
 # Then on EC2:
-cd ~/live-translation
+cd ~/med-live-translate
 source venv/bin/activate
 pip install -e .
 ```
@@ -287,12 +287,12 @@ The **large models** will take 15-30 minutes to download (6-10 GB total).
 
 ```bash
 # Activate virtual environment
-cd ~/live-translation
+cd ~/med-live-translate
 source venv/bin/activate
 
 # Download PhoWhisper-large (Vietnamese → English)
 # For CPU instance:
-live-translate-server \
+med-live-translate-server \
   --asr_backend phowhisper \
   --whisper_model vinai/PhoWhisper-large \
   --nmt_backend vinai \
@@ -309,7 +309,7 @@ live-translate-server \
 # Once you see "Server started on port 8865", press Ctrl+C
 
 # Download Whisper-large (English → Vietnamese)
-live-translate-server \
+med-live-translate-server \
   --asr_backend whisper \
   --whisper_model large-v3 \
   --nmt_backend vinai \
@@ -443,9 +443,9 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/live-translation
-Environment="PATH=/home/ubuntu/live-translation/venv/bin"
-ExecStart=/home/ubuntu/live-translation/venv/bin/live-translate-server \
+WorkingDirectory=/home/ubuntu/med-live-translate
+Environment="PATH=/home/ubuntu/med-live-translate/venv/bin"
+ExecStart=/home/ubuntu/med-live-translate/venv/bin/med-live-translate-server \
   --asr_backend phowhisper \
   --whisper_model vinai/PhoWhisper-large \
   --nmt_backend vinai \
@@ -483,9 +483,9 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/home/ubuntu/live-translation
-Environment="PATH=/home/ubuntu/live-translation/venv/bin"
-ExecStart=/home/ubuntu/live-translation/venv/bin/live-translate-server \
+WorkingDirectory=/home/ubuntu/med-live-translate
+Environment="PATH=/home/ubuntu/med-live-translate/venv/bin"
+ExecStart=/home/ubuntu/med-live-translate/venv/bin/med-live-translate-server \
   --asr_backend whisper \
   --whisper_model large-v3 \
   --nmt_backend vinai \
@@ -766,7 +766,7 @@ git push origin main
 ssh -i ~/Downloads/medcomms-key.pem ubuntu@YOUR_EC2_IP
 
 # Update code
-cd ~/live-translation
+cd ~/med-live-translate
 git pull
 source venv/bin/activate
 pip install -e .

@@ -1,7 +1,7 @@
 import os
 from unittest.mock import patch, MagicMock
-from live_translation.server._pipeline import PipelineManager
-from live_translation.server.config import Config
+from med_live_translate.server._pipeline import PipelineManager
+from med_live_translate.server.config import Config
 
 
 def test_pipeline_starts_correct_components_translate():
@@ -13,10 +13,10 @@ def test_pipeline_starts_correct_components_translate():
     fake_tx = MagicMock()
 
     with (
-        patch("live_translation.server._pipeline.WebSocketIO", return_value=fake_ws),
-        patch("live_translation.server._pipeline.AudioProcessor", return_value=fake_ap),
-        patch("live_translation.server._pipeline.Transcriber", return_value=fake_tr),
-        patch("live_translation.server._pipeline.Translator", return_value=fake_tx),
+        patch("med_live_translate.server._pipeline.WebSocketIO", return_value=fake_ws),
+        patch("med_live_translate.server._pipeline.AudioProcessor", return_value=fake_ap),
+        patch("med_live_translate.server._pipeline.Transcriber", return_value=fake_tr),
+        patch("med_live_translate.server._pipeline.Translator", return_value=fake_tx),
     ):
         pipeline = PipelineManager(cfg)
         pipeline.run_async()
@@ -37,10 +37,10 @@ def test_pipeline_starts_correct_components():
     fake_tx = MagicMock()
 
     with (
-        patch("live_translation.server._pipeline.WebSocketIO", return_value=fake_ws),
-        patch("live_translation.server._pipeline.AudioProcessor", return_value=fake_ap),
-        patch("live_translation.server._pipeline.Transcriber", return_value=fake_tr),
-        patch("live_translation.server._pipeline.Translator", return_value=fake_tx),
+        patch("med_live_translate.server._pipeline.WebSocketIO", return_value=fake_ws),
+        patch("med_live_translate.server._pipeline.AudioProcessor", return_value=fake_ap),
+        patch("med_live_translate.server._pipeline.Transcriber", return_value=fake_tr),
+        patch("med_live_translate.server._pipeline.Translator", return_value=fake_tx),
     ):
         pipeline = PipelineManager(cfg)
         pipeline.run_async()
@@ -60,9 +60,9 @@ def test_pipeline_stops_components():
     fake_tr = MagicMock()
 
     with (
-        patch("live_translation.server._pipeline.WebSocketIO", return_value=fake_ws),
-        patch("live_translation.server._pipeline.AudioProcessor", return_value=fake_ap),
-        patch("live_translation.server._pipeline.Transcriber", return_value=fake_tr),
+        patch("med_live_translate.server._pipeline.WebSocketIO", return_value=fake_ws),
+        patch("med_live_translate.server._pipeline.AudioProcessor", return_value=fake_ap),
+        patch("med_live_translate.server._pipeline.Transcriber", return_value=fake_tr),
     ):
         pipeline = PipelineManager(cfg)
         pipeline.run_async()

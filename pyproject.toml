@@ -3,10 +3,10 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = {attr = "live_translation.__version__"}
+version = {attr = "med_live_translate.__version__"}
 
 [tool.setuptools.packages.find]
-include = ["live_translation*"]
+include = ["med_live_translate*"]
 
 [project]
 name = "med-live-translate"
@@ -72,9 +72,8 @@ Repository = "https://github.com/giangson19/med-live-translate"
 "Upstream project" = "https://github.com/AbdullahHendy/live-translation"
 
 [project.scripts]
-live-translate-server = "live_translation.server.cli:main"
-live-translate-client = "live_translation.client.cli:main"
-live-translate-demo = "live_translation.tools.demo:main"
+med-live-translate-server = "med_live_translate.server.cli:main"
+med-live-translate-client = "med_live_translate.client.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -85,11 +84,6 @@ dev = [
     "pytest-asyncio==1.1.0",
     "soundfile==0.13.1",
     "build==1.3.0",
-    "twine==6.1.0"
-]
-examples = [
-    "opencv-python==4.12.0.88",
-    "pillow==11.3.0"
 ]
 
 [tool.coverage.run]
@@ -97,7 +91,7 @@ branch = true
 parallel = true
 concurrency = ["multiprocessing", "thread"]
 sigterm = true
-source = ["live_translation"]
+source = ["med_live_translate"]
 
 [tool.coverage.report]
 exclude_also = [
@@ -119,7 +113,6 @@ exclude_also = [
 omit = [
     "*/__init__.py",
     "*/tests/*",
-    "*/tools/*",
     "*/audio_samples/*",
     "*/conftest.py"
 ]

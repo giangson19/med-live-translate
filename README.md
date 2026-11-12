@@ -34,7 +34,7 @@ The system has two halves:
 
 | Half | What it is | Where |
 |---|---|---|
-| **Translation server** | Python pipeline: VAD → ASR → NMT, streaming over WebSocket | [`live_translation/`](./live_translation) |
+| **Translation server** | Python pipeline: VAD → ASR → NMT, streaming over WebSocket | [`med_live_translate/`](./med_live_translate) |
 | **MedComms web client** | Zero-install browser front end — record, translate, keep the dialogue history | [`medical-translation-webapp/`](./medical-translation-webapp) |
 
 The server half is inherited from [live-translation](https://github.com/AbdullahHendy/live-translation) by
@@ -52,7 +52,7 @@ Developed by the College of Engineering and Computer Science & the College of He
 Microphone → Opus-encoded 16 kHz mono frames over WebSocket → Silero VAD → ASR → NMT → JSON results
 streamed back to the client.
 
-<img src="./doc/live-translation-pipeline.png" alt="Architecture Diagram" />
+<img src="./doc/medcomms-pipeline.png" alt="Architecture Diagram" />
 
 ***The diagram omits finer details.***
 
@@ -61,8 +61,9 @@ A MedComms deployment runs **two server instances**, one per direction:
 | Direction | Port | ASR | MT |
 |---|---|---|---|
 | Vietnamese → English | `8765` | `vinai/PhoWhisper-small` | `vinai/vinai-translate-vi2en-v2` |
-| English → Vietnamese | `8766` | `vinai/PhoWhisper-small` | `vinai/vinai-translate-en2vi-v2` |
+| English → Vietnamese | `8766` | Whisper `small` (faster-whisper) | `vinai/vinai-translate-en2vi-v2` |
 
+PhoWhisper is fine-tuned for Vietnamese, so the English-source direction uses stock Whisper.
 The web client picks the port matching the selected direction.
 
 ---
@@ -72,6 +73,7 @@ The web client picks the port matching the selected direction.
 **Clinical translation**
 - Bidirectional Vietnamese ⇄ English, swappable with one click in the browser
 - **PhoWhisper** — Vietnamese-optimized ASR, considerably better than base Whisper on Vietnamese speech
+- **Whisper** (via faster-whisper) for English speech
 - **VinAI Translate** — state-of-the-art Vietnamese⇄English MT
 - Dialogue history so a whole consultation stays on screen
 
@@ -79,9 +81,9 @@ The web client picks the port matching the selected direction.
 - Voice Activity Detection (**Silero**) so silence never reaches the models
 - Full-duplex **WebSocket** streaming; **Opus** compression for low bandwidth on hospital Wi-Fi
 - Multithreaded/multiprocess pipeline for parallel capture, transcription, and translation
-- Also supports the general-purpose path: OpenAI **Whisper** (99 languages) + Helsinki-NLP **OpusMT**
+- Also supports Helsinki-NLP **OpusMT** for language pairs other than vi⇄en
 - Optional logging to **stdout** or structured **.jsonl** transcripts
-- Usable as a **CLI** (`live-translate-server`, `live-translate-client`) or a **Python API**
+- Usable as a **CLI** (`med-live-translate-server`, `med-live-translate-client`) or a **Python API**
   (`LiveTranslationServer`, `LiveTranslationClient`)
 
 **Client**
@@ -112,13 +114,9 @@ export DYLD_LIBRARY_PATH="/opt/homebrew/opt/opus/lib:$DYLD_LIBRARY_PATH"
 
 ## 📥 Installation
 
-> **NOTE**: This project is distributed as **`med-live-translate`** and is not published to PyPI — install
-> it from source. The `live-translation` package on PyPI is the **upstream** project and does **not**
-> include the PhoWhisper/VinAI backends or the MedComms client.
->
-> The importable module is still `live_translation`, so existing imports and the
-> `live-translate-*` commands are unchanged. If you previously installed under the old
-> distribution name, run `pip uninstall live-translation` first so you don't end up with both.
+> **NOTE**: This project is distributed as **`med-live-translate`** (module `med_live_translate`) and is
+> not published to PyPI — install it from source. The `live-translation` package on PyPI is the
+> **upstream** project and does **not** include the PhoWhisper/VinAI backends or the MedComms client.
 
 ```bash
 git clone git@github.com:giangson19/med-live-translate.git
@@ -133,7 +131,7 @@ pip install -e .
 
 Verify:
 ```bash
-python -c "import live_translation; print(live_translation.__version__)"
+python -c "import med_live_translate; print(med_live_translate.__version__)"
 ```
 
 ---
@@ -144,7 +142,7 @@ python -c "import live_translation; print(live_translation.__version__)"
 
 Vietnamese → English:
 ```bash
-live-translate-server \
+med-live-translate-server \
   --asr_backend phowhisper \
   --whisper_model vinai/PhoWhisper-small \
   --nmt_backend vinai \
@@ -155,9 +153,9 @@ live-translate-server \
 
 English → Vietnamese:
 ```bash
-live-translate-server \
-  --asr_backend phowhisper \
-  --whisper_model vinai/PhoWhisper-small \
+med-live-translate-server \
+  --asr_backend whisper \
+  --whisper_model small \
   --nmt_backend vinai \
   --trans_model vinai/vinai-translate-en2vi-v2 \
   --src_lang en --tgt_lang vi \
@@ -186,7 +184,7 @@ Full client documentation: [`medical-translation-webapp/README.md`](./medical-tr
 ### CLI
 
 ```bash
-live-translate-server [OPTIONS]
+med-live-translate-server [OPTIONS]
 ```
 
 | Option | Values | Default | Notes |
@@ -206,12 +204,11 @@ live-translate-server [OPTIONS]
 | `--transcribe_only` | flag | off | skip translation |
 | `--version` | flag | | print version and exit |
 
-Run `live-translate-server --help` for the authoritative list.
+Run `med-live-translate-server --help` for the authoritative list.
 
-There is also a reference CLI client and an all-in-one demo:
+There is also a reference CLI client:
 ```bash
-live-translate-client --server ws://localhost:8765 --codec opus
-live-translate-demo   # server + client with default config, quick smoke test only
+med-live-translate-client --server ws://localhost:8765 --codec opus
 ```
 
 > **NOTE**: On Linux, ALSA/JACK warnings when the client opens the mic (`unable to open slave`,
@@ -221,7 +218,7 @@ live-translate-demo   # server + client with default config, quick smoke test on
 
 **Server** — Vietnamese → English:
 ```python
-from live_translation import LiveTranslationServer, ServerConfig
+from med_live_translate import LiveTranslationServer, ServerConfig
 
 def main():
     config = ServerConfig(
@@ -245,7 +242,7 @@ if __name__ == "__main__":
 
 **Client**:
 ```python
-from live_translation import LiveTranslationClient, ClientConfig
+from med_live_translate import LiveTranslationClient, ClientConfig
 
 def parser_callback(entry, *args, **kwargs):
     print(f"📝 {entry['transcription']}")
@@ -260,7 +257,7 @@ if __name__ == "__main__":
     main()
 ```
 
-Non-blocking and asynchronous workflows are shown in [`./examples/`](./examples).
+Pass `blocking=False` to `run()` to start the server or client without blocking.
 
 ---
 
@@ -281,9 +278,9 @@ To write your own client, talk to the server directly.
 }
 ```
 
-Working reference clients in [`./examples/clients`](./examples/clients): **Node.js**, **Browser JS**, **Go**,
-**C#**, **Kotlin/Android**. The [Python client](./live_translation/client/client.py) is the guide for
-anything more involved. The MedComms webapp is the production browser implementation.
+Reference implementations: the [Python client](./med_live_translate/client/client.py) and the MedComms
+webapp ([`medical-translation-webapp/app.js`](./medical-translation-webapp/app.js)), which is the
+production browser client.
 
 ---
 
@@ -303,7 +300,8 @@ Serve the client over HTTPS and the WebSockets over `wss://` — an HTTPS page c
 ## 🧪 Performance notes
 
 For Vietnamese work:
-1. **PhoWhisper for ASR** — clearly better Vietnamese recognition than stock Whisper.
+1. **PhoWhisper for Vietnamese ASR** — clearly better Vietnamese recognition than stock Whisper.
+   English speech uses stock Whisper (`small` for development, `large-v3` in the EC2 deployment).
 2. **VinAI Translate for NMT** — best-in-class for vi⇄en.
 3. **GPU recommended** (`--device cuda`); both model families benefit substantially.
 4. Model size: `vinai/PhoWhisper-small` for development, `vinai/PhoWhisper-large` for production
@@ -321,7 +319,7 @@ for the heavier models — see [NVIDIA drivers](https://www.nvidia.com/drivers/)
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install --upgrade pip
-pip install -e .[dev,examples]   # == make install
+pip install -e .[dev]   # == make install
 
 make test     # pytest
 make build    # lint + format check (ruff) + wheel

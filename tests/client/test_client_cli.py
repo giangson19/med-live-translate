@@ -1,7 +1,7 @@
 import pytest
 from unittest import mock
-from live_translation.client import cli
-from live_translation import __version__ as package_version
+from med_live_translate.client import cli
+from med_live_translate import __version__ as package_version
 
 
 def test_cli_prints_version(monkeypatch, capsys):
@@ -11,14 +11,14 @@ def test_cli_prints_version(monkeypatch, capsys):
     cli.main()
 
     out, _ = capsys.readouterr()
-    assert f"live-translate-client  {package_version}" in out  ## 2 spaces
+    assert f"med-live-translate-client  {package_version}" in out  ## 2 spaces
 
 
 def test_cli_runs_client(monkeypatch):
     """Test that main() initializes and runs the client."""
     monkeypatch.setattr("sys.argv", ["client", "--server", "ws://localhost:8765"])
 
-    with mock.patch("live_translation.client.cli.LiveTranslationClient") as MockClient:
+    with mock.patch("med_live_translate.client.cli.LiveTranslationClient") as MockClient:
         instance = MockClient.return_value
         cli.main()
         instance.run.assert_called_once()

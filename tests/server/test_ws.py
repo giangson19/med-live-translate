@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 import websockets
 import multiprocessing as mp
-from live_translation.server._ws import ClientDisconnected, WebSocketIO
-from live_translation.server.config import Config
+from med_live_translate.server._ws import ClientDisconnected, WebSocketIO
+from med_live_translate.server.config import Config
 
 
 @pytest.mark.asyncio
@@ -85,7 +85,7 @@ async def test_websocketio_opus_decode_success():
     decoded_bytes = (np.ones(DECODED_SAMPLES, dtype=np.int16)).tobytes()
     mock_codec.decode.return_value = decoded_bytes
 
-    with patch("live_translation.server._ws.OpusCodec", return_value=mock_codec):
+    with patch("med_live_translate.server._ws.OpusCodec", return_value=mock_codec):
         cfg = Config(ws_port=port, codec="opus")
 
         ws_io = WebSocketIO(port, audio_queue, output_queue, stop_event, cfg)
@@ -121,7 +121,7 @@ async def test_websocketio_opus_decode_error(capfd):
     mock_codec = MagicMock()
     mock_codec.decode.side_effect = RuntimeError("decode failed")
 
-    with patch("live_translation.server._ws.OpusCodec", return_value=mock_codec):
+    with patch("med_live_translate.server._ws.OpusCodec", return_value=mock_codec):
         cfg = Config(ws_port=port, codec="opus")
 
         ws_io = WebSocketIO(port, audio_queue, output_queue, stop_event, cfg)

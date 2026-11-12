@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 import torchaudio
-from live_translation._audio._vad import VoiceActivityDetector
-from live_translation.server.config import Config
+from med_live_translate._audio._vad import VoiceActivityDetector
+from med_live_translate.server.config import Config
 
 
 @pytest.fixture

@@ -5,14 +5,13 @@ PIP = pip
 # Tools
 RUFF = ruff
 COVERAGE = coverage
-TWINE = twine
 
 # Paths
 TRANSCRIPTS_DIR = transcripts/
 COVERAGE_DIR = htmlcov/
 
 # Install options
-INSTALL_EXTRAS ?= dev,examples
+INSTALL_EXTRAS ?= dev
 EDITABLE ?= true
 
 # Default target
@@ -21,11 +20,10 @@ help:
 	@echo "  make all        - Clean, format, lint, and build the package"
 	@echo "  make build      - Build the package"
 	@echo "  make test       - Run tests with coverage reporting"
-	@echo "  make publish    - Upload the package to PyPI"
 	@echo "  make format     - Check code formatting using Ruff"
 	@echo "  make lint       - Run lint checks using Ruff"
 	@echo "  make clean      - Remove build artifacts, temp, and cache files"
-	@echo "  make install    - Install the package (editable with dev and examples extras by default)"
+	@echo "  make install    - Install the package (editable with dev extras by default)"
 	@echo "  make help       - Show this help message"
 
 # Default target: build package
@@ -47,12 +45,6 @@ test:
 	$(COVERAGE) html
 	$(COVERAGE) xml
 	@echo "\033[0;32m✅ Testing completed.\033[0m"
-
-# Publish package to PyPI (expects credentials in ~/.pypirc)
-publish: build
-	@echo "🚀 Uploading package to PyPI..."
-	$(TWINE) upload dist/*
-	@echo "\033[0;32m✅ Publish complete.\033[0m"
 
 # Format check (fails if code is not formatted)
 format:
